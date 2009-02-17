@@ -34,12 +34,13 @@ $navigation = grade_build_nav(__FILE__, $strtransposition, $course->id);
 
 /// Print header
 print_header_simple($strgrades.':'.$strtransposition, ':'.$strgrades, $navigation, '', '', true);
-print_grade_plugin_selector($courseid, 'report', 'outcomes');
+print_grade_plugin_selector($courseid, 'report', 'transposicao');
 
 print_heading($strtransposition);
 
 if ($report->initialize_cagr_data() && $report->setup_table() && $report->fill_table()) {
-    echo '<form method="POST" action="confirm.php">',
+    echo $report->print_header(),
+         '<form method="POST" action="confirm.php">',
          $report->print_table(),
          '<input type="submit" value="Enviar">',
          $report->include_grades_as_hidden_fields(),

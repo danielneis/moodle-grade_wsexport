@@ -14,6 +14,10 @@ require($CFG->dirroot.'/grade/report/transposicao/sybase.php');
 
 class grade_report_transposicao extends grade_report {
 
+    private $submission_date_range; // intervalo de envio de notas
+    private $klass; // um registro com disciplina, turma e periodo, vindo do middleware
+    private $cagr_grades; // um array com as notas vindas no CAGR
+
     function grade_report_transposicao($courseid, $gpr, $context, $page=null) {
         parent::grade_report($courseid, $gpr, $context, $page);
 
@@ -27,10 +31,21 @@ class grade_report_transposicao extends grade_report {
     
     function initialize_cagr_data() {
         $this->connect_to_cagr();
- //       $this->get_cagr_grades();
- //       $this->get_cagr_submission_date_range();
+        $this->get_klass_from_actual_courseid();
+        $this->get_submission_date_range();
+        $this->get_cagr_grades();
         $this->disconnect_from_cagr();
         return true;
+    }
+
+    function get_submission_date_range() {
+        $this->cagr_db->query("EXEC sp_NotasMoodle 4");
+        $this->submission_date_range = $this->cagr_db->result[0];
+    }
+
+    function print_header() {
+        echo get_string('submission_date_range', 'gradereport_transposicao',
+                        $this->submission_date_range);
     }
 
     function setup_table() {
@@ -69,9 +84,14 @@ class grade_report_transposicao extends grade_report {
             // Get the grade
             $finalgrade = get_field('grade_grades', 'finalgrade', 'itemid', $final_grade_item->id, 'userid', $student->id);
 
+            $grade_in_cagr = '-';
+            $current_student = $this->cagr_grades[$student->username];
+            if (is_numeric($current_student->nota)) {
+                $grade_in_cagr = $current_student->nota;
+            }
             $this->table->add_data(array(fullname($student), $finalgrade,
                                          '<input type="checkbox" name="mention['.$student->id.']" value="1">',
-                                          '', $this->cagr_grades[$student->id]));
+                                          $grade_in_cagr));
             $this->students_final_grades[$student->id] = $finalgrade;
         }
         return true;
@@ -117,6 +137,9 @@ class grade_report_transposicao extends grade_report {
             $this->sybase_error = null;
         } else {
             $this->sybase_error = $text;
+            if ($severity > 10) {
+                echo $msgnumber, '. severity: ', $severity, '. state: ', $state, '. line: ', $line, '. text: ', $text;
+            }
         }
     }
 
@@ -128,8 +151,8 @@ class grade_report_transposicao extends grade_report {
         }
 
         try {
-            $this->cagr_db = new TSYBASE($CFG->cagr->host, $CFG->cagr->base, $CFG->cagr->user,$CFG->cagr->pass, 'CP850');
             sybase_set_message_handler(array($this, 'sybase_error_handler'));
+            $this->cagr_db = new TSYBASE($CFG->cagr->host, $CFG->cagr->base, $CFG->cagr->user,$CFG->cagr->pass);
         } catch (ExceptionDB $e) {
             error(get_string('cagr_db_not_set', 'gradereport_transposicao'));
         }
@@ -141,29 +164,20 @@ class grade_report_transposicao extends grade_report {
 
     private function get_cagr_grades() {
         
-        $turma = $this->get_klass_from_actual_courseid();
-
         $sql = "SELECT *
                   FROM vi_moodleEspelhoMatricula
-                 WHERE periodo = '{$turma->periodo}'
-                   AND disciplina = '{$turma->disciplina}'
-                   AND turma = '{$turma->turma}'";
+                 WHERE periodo = {$this->klass->periodo}
+                   AND disciplina = '{$this->klass->disciplina}'
+                   AND turma = '{$this->klass->turma}'";
 
-        $this->cagr_bd->query($sql, 'matricula');
-
-        $this->cagr_grades = $this->cagr_bd->result;
+        $this->cagr_db->query($sql, 'matricula');
+        $this->cagr_grades = $this->cagr_db->result;
     }
 
-    private function get_cagr_submission_date_range() {
-
-        $this->cagr_db->query("EXEC sp_NotasMoodle 4");
-        $this->cagr_submission_date_range = $this->cagr_db->result[0];
-    }
-
-    private function search_grades_in_history($disciplina, $turma, $periodo) {
+    private function search_grades_in_history() {
         global $sybase_error;
 
-        $sql = "EXEC sp_NotasMoodle 3, {$periodo}, '{$disciplina}', '{$turma}'";
+        $sql = "EXEC sp_NotasMoodle 3, {$this->klass->periodo}, '{$this->klass->disciplina}', '{$this->klass->turma}'";
 
         $this->cagr_db->query($sql);
 
@@ -179,6 +193,19 @@ class grade_report_transposicao extends grade_report {
     }
 
     private function get_klass_from_actual_courseid() {
+        global $CFG;
+
+        if (!isset($CFG->mid) || !isset($CFG->mid->base)) {
+            error('Erro ao conectar ao middleware');
+        }
+
+        $sql = "SELECT disciplina,turma,periodo
+                  FROM {$CFG->mid->base}.Turmas
+                 WHERE idCursoMoodle = {$this->courseid}";
+
+        if(!$this->klass = get_record_sql($sql)) {
+            error('Klass not in middleware');
+        }
     }
 }
 ?>
