@@ -43,7 +43,6 @@ if ($report->initialize_cagr_data() && $report->setup_table() && $report->fill_t
          '<form method="POST" action="confirm.php">',
          $report->print_table(),
          '<input type="submit" value="Enviar">',
-         $report->include_grades_as_hidden_fields(),
          '</form>';
 }
 
