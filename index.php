@@ -40,10 +40,8 @@ print_heading($strtransposition);
 
 if ($report->initialize_cagr_data() && $report->setup_table() && $report->fill_table()) {
     echo $report->print_header(),
-         '<form method="POST" action="confirm.php">',
          $report->print_table(),
-         '<input type="submit" value="Enviar">',
-         '</form>';
+         $report->print_footer();
 }
 
 print_footer($course);
