@@ -23,6 +23,8 @@ class grade_report_transposicao extends grade_report {
     private $statistics; // um array com as contagens de alunos por problema
 
     function grade_report_transposicao($courseid, $gpr, $context, $page=null) {
+        global $CFG;
+
         parent::grade_report($courseid, $gpr, $context, $page);
 
         $this->students_final_grades = array();
@@ -37,6 +39,9 @@ class grade_report_transposicao extends grade_report {
         $this->statistics['ok'] = 0;
         $this->statistics['grade_not_formatted'] = 0;
         $this->statistics['updated_on_cagr'] = 0;
+
+        $this->show_fi = (isset($CFG->transposicao_show_fi) && $CFG->transposicao_show_fi == true);
+        $this->cagr_user = $CFG->cagr->user;
     }
     
     function initialize_cagr_data() {
@@ -132,7 +137,6 @@ class grade_report_transposicao extends grade_report {
 
 
     private function fill_ok_table() {
-        global $CFG;
 
         foreach ($this->moodle_students as $student) {
 
@@ -157,7 +161,7 @@ class grade_report_transposicao extends grade_report {
                     $this->statistics['grade_not_formatted']++;
                 }
 
-                if (strtolower($current_student->usuario) != strtolower($CFG->cagr->user)) {
+                if (strtolower($current_student->usuario) != strtolower($this->cagr_user)) {
                     $this->statistics['updated_on_cagr']++;
                     $grade_updated_on_cagr = get_string('grade_updated_on_cagr', 'gradereport_transposicao');
                 } else {
@@ -170,11 +174,14 @@ class grade_report_transposicao extends grade_report {
                 $row = array(fullname($student),
                              $moodle_grade . 
                              '<input type="hidden" name="grade['.$student->username.']" value="'.$moodle_grade.'"/>',
-                             $this->get_checkbox_for_mencao_i($student->id, $has_mencao_i),
-                             $grade_in_cagr,
-                             $sent_date,
-                             $grade_updated_on_cagr
+                             $this->get_checkbox_for_mencao_i($student->username, $has_mencao_i)
                             );
+
+                if ($this->show_fi) {
+                    $row[] = $this->get_checkbox_for_fi($student->username, $current_student->frequencia == 'FI');
+                }
+
+                $row = array_merge($row, array($grade_in_cagr, $sent_date, $grade_updated_on_cagr));
 
                 $this->table_ok->add_data($row);
             } else {
@@ -193,11 +200,13 @@ class grade_report_transposicao extends grade_report {
 
             $row = array($student->nome,
                          '', // the moodle grade doesn't exist
-                         $this->get_checkbox_for_mencao_i(' ', $has_mencao_i, true), // pass a blank id
-                         $grade_in_cagr,
-                         $student->dataAtualizacao,
-                         ''
-                        );
+                         $this->get_checkbox_for_mencao_i(' ', $has_mencao_i, true));
+            
+            if ($this->show_fi) {
+                $row[] = $this->get_checkbox_for_fi($student->matricula, $student->frequencia == 'FI', true);
+            }
+
+            $row = array_merge($row, array($grade_in_cagr, $student->dataAtualizacao, ''));
 
             $this->table_not_in_moodle->add_data($row);
         }
@@ -208,20 +217,22 @@ class grade_report_transposicao extends grade_report {
 
         $this->statistics['not_in_cagr'] = sizeof($this->not_in_cagr_students);
         foreach ($this->not_in_cagr_students as $student) {
-                $has_mencao_i = '';
-                $grade_in_cagr = '';
-                $sent_date = '';
+            $has_mencao_i = '';
+            $grade_in_cagr = '';
+            $sent_date = '';
 
-                $moodle_grade = number_format($this->get_moodle_grade($student->id), 1);
+            $moodle_grade = number_format($this->get_moodle_grade($student->id), 1);
 
-                $row = array(fullname($student),
-                             $moodle_grade,
-                             $this->get_checkbox_for_mencao_i(' ', $has_mencao_i, true), // pass a blank id
-                             $grade_in_cagr,
-                             $sent_date,
-                             ''
-                            );
-                $this->table_not_in_cagr->add_data($row);
+            $row = array(fullname($student),
+                         $moodle_grade,
+                         $this->get_checkbox_for_mencao_i(' ', $has_mencao_i, true));
+
+            if ($this->show_fi) {
+                $row[] = $this->get_checkbox_for_fi($student->username, false, true);
+            }
+            $row = array_merge($row, array($grade_in_cagr, $sent_date, ''));
+
+            $this->table_not_in_cagr->add_data($row);
         }
     }
 
@@ -356,12 +367,12 @@ class grade_report_transposicao extends grade_report {
     private function get_grade_and_mencao_i($st) {
 
         //inicialmente nao temos mencao i
-        $i = '';
+        $i = false; 
         
         if (!is_null($st->mencao)) {
             // se o aluno tem mencao I, entao a nota eh zero
             $grade = "I";
-            $i = 'checked';
+            $i = true;
         } else if (is_numeric($st->nota)) {
             // caso contrario, caso tenha nota no CAGR, ela deve ser mostrada
             $grade = $st->nota;
@@ -415,22 +426,40 @@ class grade_report_transposicao extends grade_report {
     }
 
     private function get_table_headers() {
-        return array($this->get_lang_string('name'),
-                     $this->get_lang_string('grade'),
-                     $this->get_lang_string('mention', 'gradereport_transposicao'),
-                     $this->get_lang_string('cagr_grade', 'gradereport_transposicao'),
-                     $this->get_lang_string('sent_date', 'gradereport_transposicao'),
-                     $this->get_lang_string('alerts', 'gradereport_transposicao'),
-                    );
+
+        $h = array(get_string('name'),
+                   get_string('grade'),
+                   get_string('mention', 'gradereport_transposicao')
+                  );
+
+        if ($this->show_fi) {
+            $h[] = get_string('fi', 'gradereport_transposicao');
+        }
+
+        return array_merge($h, array(get_string('cagr_grade', 'gradereport_transposicao'),
+                                     get_string('sent_date', 'gradereport_transposicao'),
+                                     get_string('alerts', 'gradereport_transposicao'),
+                                    ));
     }
 
     private function get_table_columns() {
-        return array('name', 'grade', 'mention', 'cagr_grade', 'sent_date', 'alerts');
+        $c = array('name', 'grade', 'mention',);
+        if ($this->show_fi) {
+            $c[] = 'fi';
+        }
+        return array_merge($c, array('cagr_grade', 'sent_date', 'alerts'));
     }
 
-    private function get_checkbox_for_mencao_i($st_id, $has_mencao_i, $disable = false) {
+    private function get_checkbox_for_mencao_i($st_username, $has_mencao_i, $disable = false) {
         $dis = $disable ? 'disabled="disabled"' : '';
-        return '<input type="checkbox" name="mention['.$st_id.']" '.$has_mencao_i.' value="1" '.$dis.'/>';
+        $check = $has_mencao_i ? 'checked="checked"' : '';
+        return '<input type="checkbox" name="mention['.$st_username.']" '.$check.' value="1" '.$dis.'/>';
+    }
+
+    private function get_checkbox_for_fi($st_username, $has_fi, $disable = false) {
+        $dis = $disable ? 'disabled="disabled"' : '';
+        $check = $has_fi ? 'checked="checked"' : '';
+        return '<input type="checkbox" name="fi['.$st_username.']" '.$check.' value="1" '.$dis.'/>';
     }
 }
 ?>

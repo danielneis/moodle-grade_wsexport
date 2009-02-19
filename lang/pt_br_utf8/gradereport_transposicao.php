@@ -20,4 +20,5 @@ $string['will_be_sent'] = '(Essas notas serão enviadas)';
 $string['wont_be_sent'] = '(Atenção: Essas notas não serão enviadas)';
 $string['students'] = ' aluno(s)';
 $string['grade_updated_on_cagr'] = 'Nota alterada diretamente no CAGR.';
+$string['fi'] = 'Frequência Insuficiente';
 ?>
