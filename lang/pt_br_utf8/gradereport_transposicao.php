@@ -1,11 +1,11 @@
 <?php
-$string['modulename'] = 'Transposição de notas';
+$string['modulename'] = 'Transposição de notas AVEA/CAGR';
 $string['user:view'] = 'Enviar notas para o CAGR';
 $string['mention'] = 'Menção';
 $string['cagr_grade'] = 'Nota no CAGR';
 $string['cagr_db_not_set'] = 'Problemas ao conectar no CAGR.';
-$string['submission_date_range'] = "O período de envio de notas é de \$a->dtInicial até \$a->dtFinal para \$a->periodo";
-$string['not_in_submission_date_range'] = 'Fora do período de envio de notas. '.$string['submission_date_range'];
+$string['submission_date_range'] = "O envio de notas está aberto para as disciplinas de \$a->periodo e pode ser feito entre \$a->dtInicial e \$a->dtFinal.";
+$string['prevent_grade_sent'] = ' Isto impede o envio de notas.';
 $string['sent_date'] = 'Data de envio';
 $string['alerts'] = 'Alertas';
 $string['students_not_in_cagr'] = 'Alunos cadastrados no AVEA mas não no CAGR';
@@ -23,4 +23,5 @@ $string['students'] = ' aluno(s)';
 $string['grade_updated_on_cagr'] = 'Nota alterada diretamente no CAGR.';
 $string['fi'] = 'Frequência Insuficiente';
 $string['grades_already_in_history'] = 'As notas já foram enviadas para o histórico. Isto impede o envio de notas.';
+$string['never_sent'] = 'Nunca';
 ?>

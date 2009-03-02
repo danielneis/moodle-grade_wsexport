@@ -36,7 +36,7 @@ $navigation = grade_build_nav(__FILE__, $strtransposition, $course->id);
 print_header_simple($strgrades.':'.$strtransposition, ':'.$strgrades, $navigation, '', '', true);
 print_grade_plugin_selector($courseid, 'report', 'transposicao');
 
-print_heading($strtransposition);
+print_heading($strtransposition, 'left', 1, 'page_title');
 
 if ($report->initialize_cagr_data() && $report->setup_table() && $report->fill_table()) {
     echo $report->print_header(),
