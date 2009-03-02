@@ -4,7 +4,8 @@ $string['user:view'] = 'Enviar notas para o CAGR';
 $string['mention'] = 'Menção';
 $string['cagr_grade'] = 'Nota no CAGR';
 $string['cagr_db_not_set'] = 'Problemas ao conectar no CAGR.';
-$string['submission_date_range'] = "O período de submissão de notas é de \$a->dtInicial até \$a->dtFinal para \$a->periodo";
+$string['submission_date_range'] = "O período de envio de notas é de \$a->dtInicial até \$a->dtFinal para \$a->periodo";
+$string['not_in_submission_date_range'] = 'Fora do período de envio de notas. '.$string['submission_date_range'];
 $string['sent_date'] = 'Data de envio';
 $string['alerts'] = 'Alertas';
 $string['students_not_in_cagr'] = 'Alunos cadastrados no AVEA mas não no CAGR';
@@ -21,4 +22,5 @@ $string['wont_be_sent'] = '(Atenção: Essas notas não serão enviadas)';
 $string['students'] = ' aluno(s)';
 $string['grade_updated_on_cagr'] = 'Nota alterada diretamente no CAGR.';
 $string['fi'] = 'Frequência Insuficiente';
+$string['grades_already_in_history'] = 'As notas já foram enviadas para o histórico. Isto impede o envio de notas.';
 ?>

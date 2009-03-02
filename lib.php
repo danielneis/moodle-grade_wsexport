@@ -14,11 +14,12 @@ require($CFG->dirroot.'/grade/report/transposicao/sybase.php');
 
 class grade_report_transposicao extends grade_report {
 
-    private $submission_date_range; // intervalo de envio de notas
+    private $cagr_submission_date_range; // intervalo de envio de notas
     private $klass; // um registro com disciplina, turma e periodo, vindo do middleware
     private $cagr_grades; // um array com as notas vindas no CAGR
     private $moodle_students = array(); // um array com os alunos vindo do moodle - inicializado em fill_table()
     private $not_in_cagr_students = array(); // um array com os alunos do moodle que nao estao no cagr - inicializado em fill_ok_table()
+    private $grades_in_history = null; // se as notas já foram enviadas para o histórico
     
     private $statistics; // um array com as contagens de alunos por problema
 
@@ -31,7 +32,6 @@ class grade_report_transposicao extends grade_report {
 
         $this->cagr_grades = array();
         $this->cagr_submission_date_range = null;
-        $this->cagr_grades_already_on_history = null; 
         $this->sybase_error = null; 
 
         $this->statistics['not_in_cagr'] = 0;
@@ -48,6 +48,7 @@ class grade_report_transposicao extends grade_report {
         $this->connect_to_cagr();
         $this->get_klass_from_actual_courseid();
         $this->get_submission_date_range();
+        $this->is_grades_already_in_history();
         $this->get_cagr_grades();
         $this->disconnect_from_cagr();
         return true;
@@ -55,13 +56,20 @@ class grade_report_transposicao extends grade_report {
 
 
     function print_header() {
+
         echo '<h2 class="main">',
-             get_string('submission_date_range', 'gradereport_transposicao', $this->submission_date_range),
+             get_string('submission_date_range', 'gradereport_transposicao', $this->cagr_submission_date_range),
              '</h2>';
 
         if ($this->statistics['grade_not_formatted'] > 0) {
             echo '<p class="warning">',
                  get_string('grades_not_formatted', 'gradereport_transposicao', $this->statistics['grade_not_formatted']),
+                 '</p>';
+        }
+
+        if ($this->is_grades_already_in_history()) {
+            echo '<p class="warning">',
+                 get_string('grades_already_in_history', 'gradereport_transposicao'),
                  '</p>';
         }
 
@@ -81,9 +89,20 @@ class grade_report_transposicao extends grade_report {
 
     function print_footer() {
 
-
         $disable_submission = '';
-        if ($this->statistics['grade_not_formatted'] > 0) {
+        $in_time_to_send = true;
+        $str_submit_button = get_string('submit_button', 'gradereport_transposicao');
+
+        if (!$this->is_in_time_to_send_grades()) {
+            $disable_submission = 'disabled="disabled"';
+            $in_time_to_send = false;
+            $str_not_in_time_to_send = get_string('not_in_submission_date_range',
+                                                  'gradereport_transposicao',
+                                                  $this->cagr_submission_date_range);
+        }
+
+        if (($this->statistics['grade_not_formatted'] > 0) ||
+            $this->is_grades_already_in_history()) {
             $disable_submission = 'disabled="disabled"';
         }
 
@@ -91,16 +110,37 @@ class grade_report_transposicao extends grade_report {
             $this->print_update_grades_selection();
         }
 
-        echo '<div><input type="submit" value="', get_string('submit_button', 'gradereport_transposicao'), '" ',
-             $disable_submission,' /></div>',
-             '</form>';
+        echo '<div>';
+
+        if ($this->is_grades_already_in_history()) {
+            echo '<p class="warning">',
+                 get_string('grades_already_in_history', 'gradereport_transposicao'),
+                 '</p>';
+        }
+
+        if (!$in_time_to_send) {
+            echo '<p class="warning">', $str_not_in_time_to_send , '</p>';
+        }
+        echo '<input type="submit" value="',$str_submit_button , '" ', $disable_submission,' />',
+             '</div></form>';
+    }
+
+    private function is_in_time_to_send_grades() {
+        $now = time();
+        $start_date = explode('/', $this->cagr_submission_date_range->dtInicial);
+        $end_date = explode('/', $this->cagr_submission_date_range->dtFinal);
+        $period = $this->cagr_submission_date_range->periodo;
+
+        return ($this->klass->periodo == $period) &&
+               (strtotime("{$start_date[1]}/{$start_date[0]}/{$start_date[2]}") <= $now) &&
+               ($now <= strtotime("{$end_date[1]}/{$end_date[0]}/{$end_date[2]} 23:59:59"));
     }
 
     private function print_update_grades_selection() {
 
         echo '<div class="must_update">',
-             '<input type="checkbox" name="must_update" value="1">',
-             get_string('must_update_grades', 'gradereport_transposicao'),
+             '<input type="checkbox" id="must_update" name="must_update" value="1">',
+             '<label for="must_update">',get_string('must_update_grades', 'gradereport_transposicao'), '</label>',
              '</div>';
     }
 
@@ -150,14 +190,18 @@ class grade_report_transposicao extends grade_report {
                 
                 list($has_mencao_i, $grade_in_cagr) = $this->get_grade_and_mencao_i($current_student);
 
-                // ultima data em que a nota foi enviada ao cagr
-                $sent_date = $current_student->dataAtualizacao;
 
-                $moodle_grade = $this->get_moodle_grade($student->id);
-                $float_value = floatval($moodle_grade);
+                $moodle_grade = number_format($this->get_moodle_grade($student->id), 1);
+                if (is_numeric($moodle_grade)) {
+                    $decimal_value = explode('.', $moodle_grade);
+                    $decimal_value = $decimal_value[1];
+                } else {
+                    $decimal_value = 0;
+                }
 
                 // verifica se a nota estah no padrao ufsc
-                if ( ($moodle_grade > 10) || (($float_value != 0) && ($float_value != 5))) {
+                if ( ($moodle_grade > 10) || (($decimal_value != 0) && ($decimal_value != 5))) {
+                    echo $student->username, '-', $decimal_value, '-', $moodle_grade, '<br/>';
                     $this->statistics['grade_not_formatted']++;
                 }
 
@@ -168,11 +212,12 @@ class grade_report_transposicao extends grade_report {
                     $grade_updated_on_cagr = '';
                 }
 
-                $moodle_grade = number_format($moodle_grade, 1);
+                // ultima data em que a nota foi enviada ao cagr
+                $sent_date = $current_student->dataAtualizacao;
 
                 // montando a linha da tabela
                 $row = array(fullname($student),
-                             $moodle_grade . 
+                             $moodle_grade. 
                              '<input type="hidden" name="grade['.$student->username.']" value="'.$moodle_grade.'"/>',
                              $this->get_checkbox_for_mencao_i($student->username, $has_mencao_i)
                             );
@@ -263,9 +308,9 @@ class grade_report_transposicao extends grade_report {
         return ob_get_clean();
     }
 
-    function get_submission_date_range() {
+    private function get_submission_date_range() {
         $this->cagr_db->query("EXEC sp_NotasMoodle 4");
-        $this->submission_date_range = $this->cagr_db->result[0];
+        $this->cagr_submission_date_range = $this->cagr_db->result[0];
     }
 
     function save_grades($students, $mencao, $course) {
@@ -330,22 +375,27 @@ class grade_report_transposicao extends grade_report {
         $this->cagr_grades = $this->cagr_db->result;
     }
 
-    private function search_grades_in_history() {
+    private function is_grades_already_in_history() {
         global $sybase_error;
 
-        $sql = "EXEC sp_NotasMoodle 3, {$this->klass->periodo}, '{$this->klass->disciplina}', '{$this->klass->turma}'";
+        if (is_null($this->grades_in_history)) {
 
-        $this->cagr_db->query($sql);
+            $sql = "EXEC sp_NotasMoodle 3, {$this->klass->periodo}, '{$this->klass->disciplina}', '{$this->klass->turma}'";
 
-        if (is_array($this->cagr_db->result)) {
-            foreach ($this->db_cagr->result as $log)  {
-                if (is_string($log->dtHistorico)) {
-                    $this->cagr_grades_already_on_history = true;
-                    return;
+            $this->cagr_db->query($sql);
+
+            $found = false;
+            if (is_array($this->cagr_db->result)) {
+                foreach ($this->cagr_db->result as $log)  {
+                    if (is_string($log->dtHistorico)) {
+                        $found = true;
+                        break;
+                    }
                 }
             }
+            $this->grades_in_history = $found;
         }
-        $this->cagr_grades_already_on_history = false;
+        return $this->grades_in_history;
     }
 
     private function get_klass_from_actual_courseid() {
