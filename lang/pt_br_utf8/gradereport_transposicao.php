@@ -24,4 +24,5 @@ $string['grade_updated_on_cagr'] = 'Nota alterada diretamente no CAGR.';
 $string['fi'] = 'Frequência Insuficiente';
 $string['grades_already_in_history'] = 'As notas já foram enviadas para o histórico. Isto impede o envio de notas.';
 $string['never_sent'] = 'Nunca';
+$string['not_cagr_course'] = 'Transposição indisponível para turmas do CAPG.';
 ?>

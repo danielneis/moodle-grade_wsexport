@@ -423,12 +423,16 @@ class grade_report_transposicao extends grade_report {
             error('Erro ao conectar ao middleware');
         }
 
-        $sql = "SELECT disciplina,turma,periodo
+        $sql = "SELECT disciplina, turma, periodo, modalidade
                   FROM {$CFG->mid->base}.Turmas
+                  JOIN {$CFG->mid->base}.Cursos
+                 USING (curso)
                  WHERE idCursoMoodle = {$this->courseid}";
 
-        if(!$this->klass = get_record_sql($sql)) {
+        if (!$this->klass = get_record_sql($sql)) {
             error('Klass not in middleware');
+        } else if ($this->klass->modalidade != 'GR') {
+            error(get_string('not_cagr_course', 'gradereport_transposicao'));
         }
     }
 
