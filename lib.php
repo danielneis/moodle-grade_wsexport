@@ -87,7 +87,7 @@ class grade_report_transposicao extends grade_report {
              '</a> ', get_string('will_be_sent', 'gradereport_transposicao'),'</p>';
 
 
-       echo '<form method="post" action="confirm.php">';
+       echo "<form method=\"post\" action=\"confirm.php?id={$this->courseid}\">";
     }
 
     function print_footer() {
@@ -123,12 +123,10 @@ class grade_report_transposicao extends grade_report {
             echo '<p class="warning prevent">', $str_not_in_time_to_send , '</p>';
         }
 
-        if ($this->statistics['updated_on_cagr'] > 0) {
-            $this->print_update_grades_selection();
-        }
+        $this->print_update_grades_selection();
 
-        echo '<input type="submit" value="',$str_submit_button , '" ', $disable_submission,' />',
-             '</div></form>';
+        //echo '<input type="submit" value="',$str_submit_button , '" ', $disable_submission,' />', '</div></form>';
+        echo '<input type="submit" value="',$str_submit_button , '" ', ' />', '</div></form>';
     }
 
     private function is_in_time_to_send_grades() {
@@ -144,9 +142,9 @@ class grade_report_transposicao extends grade_report {
 
     private function print_update_grades_selection() {
 
-        echo '<p class="must_update">',
-             '<input type="checkbox" id="must_update" name="must_update" value="1">',
-             '<label for="must_update">',get_string('must_update_grades', 'gradereport_transposicao'), '</label>',
+        echo '<p class="overwrite_all">',
+             '<input type="checkbox" id="overwrite_all" name="overwrite_all" value="1">',
+             '<label for="overwrite_all">',get_string('overwrite_all_grades', 'gradereport_transposicao'), '</label>',
              '</p>';
     }
 
@@ -216,9 +214,11 @@ class grade_report_transposicao extends grade_report {
                 $cagr_user = strtolower($current_student->usuario);
 
                 $grade_updated_on_cagr = '';
+                $grade_on_cagr_hidden = '';
                 if (($cagr_user != strtolower($this->cagr_user)) && $cagr_user != 'cagr') {
                     $this->statistics['updated_on_cagr']++;
                     $grade_updated_on_cagr = get_string('grade_updated_on_cagr', 'gradereport_transposicao');
+                    $grade_on_cagr_hidden = '<input type="hidden" name="grades_cagr['.$student->username.'] value="1"/>';
                 }
 
                 if (is_null($current_student->nota) && $cagr_user == 'cagr') {
@@ -227,10 +227,11 @@ class grade_report_transposicao extends grade_report {
                     $sent_date = $current_student->dataAtualizacao;
                 }
 
+                $grade_hidden =  '<input type="hidden" name="grades['.$student->username.']" value="'.$moodle_grade.'"/>';
+
                 // montando a linha da tabela
                 $row = array(fullname($student),
-                             $moodle_grade. 
-                             '<input type="hidden" name="grade['.$student->username.']" value="'.$moodle_grade.'"/>',
+                             $moodle_grade.  $grade_hidden . $grade_on_cagr_hidden,
                              $this->get_checkbox_for_mencao_i($student->username, $has_mencao_i)
                             );
 
