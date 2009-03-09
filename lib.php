@@ -1,6 +1,6 @@
 <?php
-require_once($CFG->dirroot.'/grade/report/lib.php');
-require_once($CFG->libdir.'/tablelib.php');
+require($CFG->dirroot.'/grade/report/lib.php');
+require($CFG->libdir.'/tablelib.php');
 require($CFG->dirroot.'/grade/report/transposicao/sybase.php');
 
 /**
@@ -14,34 +14,39 @@ require($CFG->dirroot.'/grade/report/transposicao/sybase.php');
 
 class grade_report_transposicao extends grade_report {
 
-    private $cagr_submission_date_range; // intervalo de envio de notas
+    private $cagr_submission_date_range = null; // intervalo de envio de notas
+    private $cagr_grades = array(); // um array com as notas vindas no CAGR
     private $klass; // um registro com disciplina, turma e periodo, vindo do middleware
-    private $cagr_grades; // um array com as notas vindas no CAGR
-    private $moodle_students = array(); // um array com os alunos vindo do moodle - inicializado em fill_table()
-    private $not_in_cagr_students = array(); // um array com os alunos do moodle que nao estao no cagr - inicializado em fill_ok_table()
-    private $grades_in_history = null; // se as notas já foram enviadas para o histórico
-    
-    private $statistics; // um array com as contagens de alunos por problema
+
+    // um array com os alunos vindo do moodle - inicializado em fill_table()
+    private $moodle_students = array();
+    // um array com os alunos do moodle que nao estao no cagr - inicializado em fill_ok_table()
+    private $not_in_cagr_students = array();
+
+    // se as notas já foram enviadas para o histórico
+    private $grades_in_history = null;
+
+    // um array com as contagens de alunos por problema
+    private $statistics = array('not_in_cagr' => 0, 'not_in_moodle' => 0, 'ok' => 0,
+                                'grade_not_formatted' => 0, 'updated_on_cagr' => 0);
+
+    private $cagr_db = null; // conexao com o sybase
+    private $sybase_error = null; // warnings e erros do sybase
+    private $send_results = array(); // um array (matricula => msg) com as msgs de erro de envio de notas
 
     function grade_report_transposicao($courseid, $gpr, $context, $page=null) {
         global $CFG;
 
         parent::grade_report($courseid, $gpr, $context, $page);
 
-        $this->students_final_grades = array();
-
-        $this->cagr_grades = array();
-        $this->cagr_submission_date_range = null;
-        $this->sybase_error = null; 
-
-        $this->statistics['not_in_cagr'] = 0;
-        $this->statistics['not_in_moodle'] = 0;
-        $this->statistics['ok'] = 0;
-        $this->statistics['grade_not_formatted'] = 0;
-        $this->statistics['updated_on_cagr'] = 0;
-
         $this->show_fi = (isset($CFG->transposicao_show_fi) && $CFG->transposicao_show_fi == true);
         $this->cagr_user = $CFG->cagr->user;
+    }
+
+    function __destruct() {
+        if (!is_null($this->cagr_db)) {
+            $this->disconnect_from_cagr();
+        }
     }
     
     function initialize_cagr_data() {
@@ -50,10 +55,8 @@ class grade_report_transposicao extends grade_report {
         $this->get_submission_date_range();
         $this->is_grades_already_in_history();
         $this->get_cagr_grades();
-        $this->disconnect_from_cagr();
         return true;
     }
-
 
     function print_header() {
 
@@ -207,17 +210,20 @@ class grade_report_transposicao extends grade_report {
 
                 // verifica se a nota estah no padrao ufsc
                 if ( ($moodle_grade > 10) || (($decimal_value != 0) && ($decimal_value != 5))) {
-                    echo $student->username, '-', $decimal_value, '-', $moodle_grade, '<br/>';
                     $this->statistics['grade_not_formatted']++;
                 }
 
-                $cagr_user = strtolower($current_student->usuario);
+                $usuario = strtolower($current_student->usuario);
 
                 $grade_updated_on_cagr = '';
                 $grade_on_cagr_hidden = '';
-                if (($cagr_user != strtolower($this->cagr_user)) && $cagr_user != 'cagr') {
+                if (($usuario != strtolower($this->cagr_user)) &&
+                    $usuario != 'cagr') {
+
                     $this->statistics['updated_on_cagr']++;
+
                     $grade_updated_on_cagr = get_string('grade_updated_on_cagr', 'gradereport_transposicao');
+
                     $grade_on_cagr_hidden = '<input type="hidden" name="grades_cagr['.$student->username.'] value="1"/>';
                 }
 
@@ -332,24 +338,41 @@ class grade_report_transposicao extends grade_report {
         $this->cagr_submission_date_range = $this->cagr_db->result[0];
     }
 
-    function save_grades($students, $mencao, $course) {
+    function send_grades($grades, $mention, $fi) {
         global $USER;
 
         $msgs = array();
-        foreach ($students as $matricula => $grade) {
-            if (isset($mencao[$matricula])) {
-                $i = "'I'"; $grade = "NULL";
+        foreach ($grades as $matricula => $grade) {
+
+            if (isset($mention[$matricula])) {
+                $i = "'I'";
+                $grade = "NULL";
             } else {
                 $i = "NULL";
             }
-            $sql = "EXEC sp_NotasMoodle 1, {$course->periodo}, '{$course->disciplina}', '{$course->turma}',
-            {$matricula}, {$grade}, {$i}, 'FS', {$USER['username']}";
+
+            if (isset($fi[$matricula])) {
+                $grade = 0;
+                $f = 'FI';
+            } else {
+                $f = 'FS';
+            }
+
+            if ($grade == '-') {
+                $grade = "NULL";
+            }
+
+            $sql = "EXEC sp_NotasMoodle 1,
+                    {$this->klass->periodo}, '{$this->klass->disciplina}', '{$this->klass->turma}',
+                    {$matricula}, {$grade}, {$i}, {$f}, {$USER->username}";
+
+            //echo $sql, "<hr/>";
             $this->cagr_db->query($sql);
+
             if (!is_null($this->sybase_error)) {
-                $msgs[$matricula] = $sybase_error;
+                $this->send_results[$matricula] = $this->sybase_error;
             }
         }
-        return $msgs;
     }
 
     function sybase_error_handler($msgnumber, $severity, $state, $line, $text) {
@@ -357,9 +380,19 @@ class grade_report_transposicao extends grade_report {
             $this->sybase_error = null;
         } else {
             $this->sybase_error = $text;
-            if ($severity > 10) {
-                echo $msgnumber, '. severity: ', $severity, '. state: ', $state, '. line: ', $line, '. text: ', $text;
+        }
+    }
+
+    function print_send_results() {
+        if (empty($this->send_results)) {
+            echo '<p>', get_string('all_grades_was_sent', 'gradereport_transposicao'), '</p>';
+        } else {
+            echo '<p>', get_string('some_grades_not_sent', 'gradereport_transposicao'), '</p>',
+                 '<ul class="send_results">';
+            foreach ($this->send_results as $matricula => $msg) {
+                echo '<li>', $matricula, ': ', $msg, '</li>'; 
             }
+            echo '</ul>';
         }
     }
 
@@ -367,14 +400,14 @@ class grade_report_transposicao extends grade_report {
         global $CFG;
 
         if (!isset($CFG->cagr)) {
-            error(get_string('cagr_db_not_set', 'gradereport_transposicao'));
+            print_error(get_string('cagr_db_not_set', 'gradereport_transposicao'));
         }
 
         try {
             sybase_set_message_handler(array($this, 'sybase_error_handler'));
             $this->cagr_db = new TSYBASE($CFG->cagr->host, $CFG->cagr->base, $CFG->cagr->user,$CFG->cagr->pass);
         } catch (ExceptionDB $e) {
-            error(get_string('cagr_db_not_set', 'gradereport_transposicao'));
+            print_error(get_string('cagr_db_not_set', 'gradereport_transposicao'));
         }
     }
 
@@ -421,19 +454,17 @@ class grade_report_transposicao extends grade_report {
         global $CFG;
 
         if (!isset($CFG->mid) || !isset($CFG->mid->base)) {
-            error('Erro ao conectar ao middleware');
+            print_error('Erro ao conectar ao middleware');
         }
 
         $sql = "SELECT disciplina, turma, periodo, modalidade
-                  FROM {$CFG->mid->base}.Turmas
-                  JOIN {$CFG->mid->base}.Cursos
-                 USING (curso)
+                  FROM {$CFG->mid->base}.ViewTurmasAtivas
                  WHERE idCursoMoodle = {$this->courseid}";
 
         if (!$this->klass = get_record_sql($sql)) {
-            error('Klass not in middleware');
+            print_error(get_string('class_not_in_middleware', 'gradereport_transposicao'));
         } else if ($this->klass->modalidade != 'GR') {
-            error(get_string('not_cagr_course', 'gradereport_transposicao'));
+            print_error(get_string('not_cagr_course', 'gradereport_transposicao'));
         }
     }
 

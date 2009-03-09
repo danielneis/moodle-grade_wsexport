@@ -1,9 +1,9 @@
 <?php
 
-include_once('../../../config.php');
-require_once($CFG->libdir .'/gradelib.php');
-require_once($CFG->dirroot.'/grade/lib.php');
-require_once($CFG->dirroot.'/grade/report/transposicao/lib.php');
+include('../../../config.php');
+require($CFG->libdir .'/gradelib.php');
+require($CFG->dirroot.'/grade/lib.php');
+require($CFG->dirroot.'/grade/report/transposicao/lib.php');
 
 $courseid = required_param('id', PARAM_INT);// course id
 
@@ -27,16 +27,16 @@ $report = new grade_report_transposicao($courseid, $gpr, $context);
 
 // END "BOOT" LOGIG, STARTING INTERFACE
 // Build navigation
-$strgrades = get_string('grades');
-$strtransposition = get_string('modulename', 'gradereport_transposicao');
+$str_grades = get_string('grades');
+$str_transposition = get_string('modulename', 'gradereport_transposicao');
 
-$navigation = grade_build_nav(__FILE__, $strtransposition, $course->id);
+$navigation = grade_build_nav(__FILE__, $str_transposition, $course->id);
 
 /// Print header
-print_header_simple($strgrades.':'.$strtransposition, ':'.$strgrades, $navigation, '', '', true);
+print_header_simple($str_grades.':'.$str_transposition, ':'.$str_grades, $navigation, '', '', true);
 print_grade_plugin_selector($courseid, 'report', 'transposicao');
 
-print_heading($strtransposition, 'left', 1, 'page_title');
+print_heading($str_transposition, 'left', 1, 'page_title');
 
 if ($report->initialize_cagr_data() && $report->setup_table() && $report->fill_table()) {
     echo $report->print_header(),

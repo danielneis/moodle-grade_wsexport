@@ -30,4 +30,6 @@ $string['wont_overwrite_grades'] = 'Você optou por substituir as notas apenas d
 $string['confirm_notice'] = 'Você tem certeza que deseja enviar as notas para o Controle Acadêmico (CAGR)?';
 $string['all_grades_sent'] = 'Todas as notas foram transpostas para o CAGR';
 $string['all_grades_sent_except_these'] = 'As notas foram transpostas para o CAGR, exceto as dos estudantes listados abaixo:';
+$string['class_not_in_middleware'] = 'Não é possível transpor as notas desta turma.';
+$string['return_to_index'] = 'Voltar à relação de notas.';
 ?>
