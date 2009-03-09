@@ -150,7 +150,7 @@ class grade_report_transposicao extends grade_report {
         $period = $this->cagr_submission_date_range->periodo;
 
         return ($this->klass->periodo == $period) &&
-               (strtotime("{$start_date[1]}/{$start_date[0]}/{$start_date[2]}") <= $now) &&
+               (strtotime("{$start_date[1]}/{$start_date[0]}/{$start_date[2]} 00:00:00") <= $now) &&
                ($now <= strtotime("{$end_date[1]}/{$end_date[0]}/{$end_date[2]} 23:59:59"));
     }
 
@@ -345,6 +345,7 @@ class grade_report_transposicao extends grade_report {
     }
 
     private function get_submission_date_range() {
+        global $CFG;
         if (property_exists($CFG, 'transposicao_presencial') && $CFG->transposicao_presencial == true) {
             $this->cagr_db->query("EXEC sp_NotasMoodle 14");
         } else {
