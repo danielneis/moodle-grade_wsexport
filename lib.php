@@ -345,7 +345,11 @@ class grade_report_transposicao extends grade_report {
     }
 
     private function get_submission_date_range() {
-        $this->cagr_db->query("EXEC sp_NotasMoodle 4");
+        if (property_exists($CFG, 'transposicao_presencial') && $CFG->transposicao_presencial == true) {
+            $this->cagr_db->query("EXEC sp_NotasMoodle 14");
+        } else {
+            $this->cagr_db->query("EXEC sp_NotasMoodle 4");
+        }
         $this->cagr_submission_date_range = $this->cagr_db->result[0];
     }
 
@@ -464,12 +468,12 @@ class grade_report_transposicao extends grade_report {
     private function get_klass_from_actual_courseid() {
         global $CFG;
 
-        if (!isset($CFG->mid) || !isset($CFG->mid->base)) {
+        if (!property_exists($CFG, 'mid_dbname')) {
             print_error('Erro ao conectar ao middleware');
         }
 
         $sql = "SELECT disciplina, turma, periodo, modalidade
-                  FROM {$CFG->mid->base}.ViewTurmasAtivas
+                  FROM {$CFG->mid_dbname}.ViewTurmasAtivas
                  WHERE idCursoMoodle = {$this->courseid}";
 
         if (!$this->klass = get_record_sql($sql)) {
