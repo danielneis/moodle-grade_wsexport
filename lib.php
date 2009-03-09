@@ -34,7 +34,10 @@ class grade_report_transposicao extends grade_report {
     private $sybase_error = null; // warnings e erros do sybase
     private $send_results = array(); // um array (matricula => msg) com as msgs de erro de envio de notas
 
-    function grade_report_transposicao($courseid, $gpr, $context, $page=null) {
+    private $show_fi = null; //from CFG, if must show the 'FI' column
+    private $cagr_user = null;// CFG->cagr->user
+
+    function __construct($courseid, $gpr, $context, $page=null) {
         global $CFG;
 
         parent::grade_report($courseid, $gpr, $context, $page);
@@ -73,9 +76,16 @@ class grade_report_transposicao extends grade_report {
                  '</p>';
         }
 
+
         if ($this->is_grades_already_in_history()) {
             echo '<p class="warning prevent">',
                  get_string('grades_already_in_history', 'gradereport_transposicao'),
+                 '</p>';
+        }
+
+        if ($this->statistics['updated_on_cagr'] > 0) {
+            echo '<p class="warning">',
+                 get_string('grades_updated_on_cagr', 'gradereport_transposicao'),
                  '</p>';
         }
 
@@ -126,10 +136,11 @@ class grade_report_transposicao extends grade_report {
             echo '<p class="warning prevent">', $str_not_in_time_to_send , '</p>';
         }
 
-        $this->print_update_grades_selection();
+        if ($this->statistics['updated_on_cagr'] > 0) {
+            $this->print_update_grades_selection();
+        }
 
-        //echo '<input type="submit" value="',$str_submit_button , '" ', $disable_submission,' />', '</div></form>';
-        echo '<input type="submit" value="',$str_submit_button , '" ', ' />', '</div></form>';
+        echo '<input type="submit" value="',$str_submit_button , '" ', $disable_submission,' />', '</div></form>';
     }
 
     private function is_in_time_to_send_grades() {
@@ -227,7 +238,7 @@ class grade_report_transposicao extends grade_report {
                     $grade_on_cagr_hidden = '<input type="hidden" name="grades_cagr['.$student->username.'] value="1"/>';
                 }
 
-                if (is_null($current_student->nota) && $cagr_user == 'cagr') {
+                if (is_null($current_student->nota) && $usuario == 'cagr') {
                     $sent_date = get_string('never_sent', 'gradereport_transposicao');
                 } else {
                     $sent_date = $current_student->dataAtualizacao;

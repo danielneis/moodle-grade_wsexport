@@ -11,7 +11,7 @@ $string['alerts'] = 'Alertas';
 $string['students_not_in_cagr'] = 'Alunos cadastrados no AVEA mas não no CAGR';
 $string['students_not_in_moodle'] = 'Alunos cadastrados no CAGR mas não no AVEA';
 $string['students_ok'] = 'Alunos cadastrados no AVEA e no CAGR';
-$string['overwrite_all_grades'] = 'Marque esta caixa caso queira sobrepor as notas que foram definidas diretamente no CAGR.';
+$string['overwrite_all_grades'] = 'Marque esta caixa caso queira, além de transpor as notas, substituir as que foram definidas diretamente no CAGR.';
 $string['grades_not_formatted'] = 'Há pelo menos uma nota fora do padrão da UFSC.
 Isto impossibilita o envio de notas.
 \"Todas as avaliações serão expressas através de notas graduadas de 0 (zero) a 10 (dez),
@@ -32,4 +32,5 @@ $string['all_grades_sent'] = 'Todas as notas foram transpostas para o CAGR';
 $string['all_grades_sent_except_these'] = 'As notas foram transpostas para o CAGR, exceto as dos estudantes listados abaixo:';
 $string['class_not_in_middleware'] = 'Não é possível transpor as notas desta turma.';
 $string['return_to_index'] = 'Voltar à relação de notas.';
+$string['grades_updated_on_cagr'] = 'Atenção, há pelo menos uma nota alterada diretamente no CAGR. Para transpor as notas, substituindo as definidas diretamente no CAGR, será necessário marcar esta opção na parte final deste relatório.';
 ?>
