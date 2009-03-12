@@ -8,10 +8,15 @@ require($CFG->dirroot.'/grade/report/transposicao/lib.php');
 $courseid = required_param('id', PARAM_INT);// course id
 
 if (!$course = get_record('course', 'id', $courseid)) {
-    print_error('invalidcourseid');
+    print_error(get_string('invalidcourseid'));
 }
 
 require_login($course->id);
+
+if ($course->metacourse > 0) {
+    print_error(get_string('is_or_in_metacourse', 'gradereport_transposicao'));
+}
+
 $context = get_context_instance(CONTEXT_COURSE, $course->id);
 
 require_capability('gradereport/transposicao:view', $context);

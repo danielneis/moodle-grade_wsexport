@@ -46,6 +46,8 @@ print_heading($str_transposition, 'left', 1, 'page_title');
 if ($report->initialize_cagr_data()) {
     $report->send_grades($grades, $mention, $fi);
     $report->print_send_results();
+} else {
+    print_error("could not connect to cagr");
 }
 
 echo '<a href="'.$CFG->wwwroot.'/grade/report/transposicao/index.php?id='.$course->id.'">',

@@ -51,7 +51,7 @@ foreach ($grades as $matricula => $grade) {
 }
 
 foreach ($mention as $matricula => $mencao) {
-    echo '<input type="hidden" name="mencao['.$matricula.']" value="1"/>';
+    echo '<input type="hidden" name="mention['.$matricula.']" value="1"/>';
 }
 
 foreach ($fi as $matricula => $fi) {

@@ -3,15 +3,6 @@ require($CFG->dirroot.'/grade/report/lib.php');
 require($CFG->libdir.'/tablelib.php');
 require($CFG->dirroot.'/grade/report/transposicao/sybase.php');
 
-/**
- *
- * primeiro parametro da stored procedure sp_NotasMoodle
- * 1 - inclui
- * 2 - busca notas (deprecated - substituido pela vi_moodleEspelhoMatricula)
- * 3 - busca logs
- * 4 - busca período de digitacao de notas EAD
- */
-
 class grade_report_transposicao extends grade_report {
 
     private $cagr_submission_date_range = null; // intervalo de envio de notas
@@ -34,8 +25,10 @@ class grade_report_transposicao extends grade_report {
     private $sybase_error = null; // warnings e erros do sybase
     private $send_results = array(); // um array (matricula => msg) com as msgs de erro de envio de notas
 
-    private $show_fi = null; //from CFG, if must show the 'FI' column
-    private $cagr_user = null;// CFG->cagr->user
+    private $show_fi = null; // from CFG, if must show the 'FI' column
+    private $cagr_user = null; // CFG->cagr->user
+
+    private $sp_cagr_params; // an array with sp_NotasMoodle params
 
     function __construct($courseid, $gpr, $context, $page=null) {
         global $CFG;
@@ -44,6 +37,12 @@ class grade_report_transposicao extends grade_report {
 
         $this->show_fi = (isset($CFG->transposicao_show_fi) && $CFG->transposicao_show_fi == true);
         $this->cagr_user = $CFG->cagr->user;
+
+        if (property_exists($CFG, 'transposicao_presencial') && $CFG->transposicao_presencial == true) {
+            $this->sp_cagr_params = array('send' => 11, 'submission_range' => 14, 'logs' => 13);
+        } else {
+            $this->sp_cagr_params = array('send' => 1, 'submission_range' => 4, 'logs' => 3);
+        }
     }
 
     function __destruct() {
@@ -345,12 +344,7 @@ class grade_report_transposicao extends grade_report {
     }
 
     private function get_submission_date_range() {
-        global $CFG;
-        if (property_exists($CFG, 'transposicao_presencial') && $CFG->transposicao_presencial == true) {
-            $this->cagr_db->query("EXEC sp_NotasMoodle 14");
-        } else {
-            $this->cagr_db->query("EXEC sp_NotasMoodle 4");
-        }
+        $this->cagr_db->query("EXEC sp_NotasMoodle {$this->sp_cagr_params['submission_range']}");
         $this->cagr_submission_date_range = $this->cagr_db->result[0];
     }
 
@@ -362,14 +356,14 @@ class grade_report_transposicao extends grade_report {
 
             if (isset($mention[$matricula])) {
                 $i = "'I'";
-                $grade = "NULL";
+                $grade = 'NULL';
             } else {
-                $i = "NULL";
+                $i = 'NULL';
             }
 
             if (isset($fi[$matricula])) {
-                $grade = 0;
                 $f = 'FI';
+                if ($grade != 'NULL') $grade = '0';
             } else {
                 $f = 'FS';
             }
@@ -378,16 +372,19 @@ class grade_report_transposicao extends grade_report {
                 $grade = "NULL";
             }
 
-            $sql = "EXEC sp_NotasMoodle 1,
+            $sql = "EXEC sp_NotasMoodle {$this->sp_cagr_params['send']},
                     {$this->klass->periodo}, '{$this->klass->disciplina}', '{$this->klass->turma}',
-                    {$matricula}, {$grade}, {$i}, {$f}, {$USER->username}";
+                    {$matricula}, {$grade}, {$i}, '{$f}', {$USER->username}";
 
-            //echo $sql, "<hr/>";
             $this->cagr_db->query($sql);
 
+            $log_info = "matricula: {$matricula}; nota: {$grade}; mencao: {$i}; frequência: {$f}";
+
             if (!is_null($this->sybase_error)) {
-                $this->send_results[$matricula] = $this->sybase_error;
+                $this->send_results[$matricula] = utf8_encode($this->sybase_error);
+                $log_info .= ' ERRO: '.$this->send_results[$matricula];
             }
+            add_to_log($this->courseid, 'grade', 'transposicao', 'send.php', $log_info);
         }
     }
 
@@ -448,7 +445,8 @@ class grade_report_transposicao extends grade_report {
 
         if (is_null($this->grades_in_history)) {
 
-            $sql = "EXEC sp_NotasMoodle 3, {$this->klass->periodo}, '{$this->klass->disciplina}', '{$this->klass->turma}'";
+            $sql = "EXEC sp_NotasMoodle {$this->sp_cagr_params['logs']},
+                    {$this->klass->periodo}, '{$this->klass->disciplina}', '{$this->klass->turma}'";
 
             $this->cagr_db->query($sql);
 

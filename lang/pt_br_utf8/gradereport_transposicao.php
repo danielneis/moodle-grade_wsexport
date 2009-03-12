@@ -33,4 +33,9 @@ $string['all_grades_sent_except_these'] = 'As notas foram transpostas para o CAG
 $string['class_not_in_middleware'] = 'Não é possível transpor as notas desta turma.';
 $string['return_to_index'] = 'Voltar à relação de notas.';
 $string['grades_updated_on_cagr'] = 'Atenção, há pelo menos uma nota alterada diretamente no CAGR. Para transpor as notas, substituindo as definidas diretamente no CAGR, será necessário marcar esta opção na parte final deste relatório.';
+$string['is_or_in_metacourse'] = 'Este curso é (ou faz parte de) um metacurso. No momento a transposição de notas não está habilitada para esses tipos de curso.';
+$string['some_grades_not_sent'] = 'As notas abaixo não foram enviadas.';
+$string['all_grades_was_sent'] = 'Todas as notas foram enviadas.';
+$string['transposicao:view'] = 'Visualizar notas a serem transpostas';
+$string['transposicao:send'] = 'Transpor notas para o CAGR';
 ?>
