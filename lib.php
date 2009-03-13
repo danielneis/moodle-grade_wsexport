@@ -413,14 +413,14 @@ class grade_report_transposicao extends grade_report {
         global $CFG;
 
         if (!isset($CFG->cagr)) {
-            print_error(get_string('cagr_db_not_set', 'gradereport_transposicao'));
+            print_error('cagr_db_not_set', 'gradereport_transposicao');
         }
 
         try {
             sybase_set_message_handler(array($this, 'sybase_error_handler'));
             $this->cagr_db = new TSYBASE($CFG->cagr->host, $CFG->cagr->base, $CFG->cagr->user,$CFG->cagr->pass);
         } catch (ExceptionDB $e) {
-            print_error(get_string('cagr_db_not_set', 'gradereport_transposicao'));
+            print_error('cagr_db_not_set', 'gradereport_transposicao');
         }
     }
 
@@ -468,7 +468,7 @@ class grade_report_transposicao extends grade_report {
         global $CFG;
 
         if (!property_exists($CFG, 'mid_dbname')) {
-            print_error('Erro ao conectar ao middleware');
+            print_error('error_on_middleware_connection', 'gradereport_transposicao');
         }
 
         $sql = "SELECT disciplina, turma, periodo, modalidade
@@ -476,9 +476,9 @@ class grade_report_transposicao extends grade_report {
                  WHERE idCursoMoodle = {$this->courseid}";
 
         if (!$this->klass = get_record_sql($sql)) {
-            print_error(get_string('class_not_in_middleware', 'gradereport_transposicao'));
+            print_error('class_not_in_middleware', 'gradereport_transposicao');
         } else if ($this->klass->modalidade != 'GR') {
-            print_error(get_string('not_cagr_course', 'gradereport_transposicao'));
+            print_error('not_cagr_course', 'gradereport_transposicao');
         }
     }
 
