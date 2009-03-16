@@ -21,18 +21,21 @@ $context = get_context_instance(CONTEXT_COURSE, $course->id);
 
 require_capability('gradereport/transposicao:send', $context);
 
-$str_grades = get_string('grades');
+$str_grades        = get_string('grades');
 $str_transposition = get_string('modulename', 'gradereport_transposicao');
-$str_confirm =  get_string('confirm_notice', 'gradereport_transposicao');
-$str_yes = get_string('yes');
-$str_no = get_string('no');
+$str_confirm       = get_string('confirm_notice', 'gradereport_transposicao');
+$str_yes           = get_string('yes');
+$str_no            = get_string('no');
+$str_notice        = '';
 
-if ($overwrite_all == 1) {
-    $str_notice = get_string('will_overwrite_grades', 'gradereport_transposicao');
-} else {
-    // remove grades that was updated on cagr, if user did not want to overwrite
-    $grades = array_diff_key($grades, $grades_cagr);
-    $str_notice = get_string('wont_overwrite_grades', 'gradereport_transposicao');
+if (!empty($grades_cagr)) {
+    if ($overwrite_all == 1) {
+        $str_notice = get_string('will_overwrite_grades', 'gradereport_transposicao');
+    } else {
+        // remove grades that was updated on cagr, if user did not want to overwrite
+        $grades = array_diff_key($grades, $grades_cagr);
+        $str_notice = get_string('wont_overwrite_grades', 'gradereport_transposicao');
+    }
 }
 
 // START INTERFACE
