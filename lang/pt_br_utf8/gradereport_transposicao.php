@@ -18,7 +18,7 @@ Isto impossibilita o envio de notas.
 não podendo ser fracionadas aquém ou além de 0,5 (zero vírgula cinco).\" (Resolução Nº017/CUn/97)';
 $string['submit_button'] = 'Enviar notas';
 $string['will_be_sent'] = '(Essas notas serão enviadas)';
-$string['wont_be_sent'] = '(Atenção: Essas notas não serão enviadas)';
+$string['wont_be_sent'] = '(<span class=\"pay_attention\">Atenção:</span> Essas notas não serão enviadas)';
 $string['students'] = ' aluno(s)';
 $string['grade_updated_on_cagr'] = 'Nota alterada diretamente no CAGR.';
 $string['fi'] = 'Frequência Insuficiente';
@@ -27,7 +27,7 @@ $string['never_sent'] = 'Nunca';
 $string['not_cagr_course'] = 'Transposição indisponível para turmas do CAPG.';
 $string['will_overwrite_grades'] = 'Você optou por substituir as notas de todos os alunos enviadas anteriormente.';
 $string['wont_overwrite_grades'] = 'Você optou por substituir as notas apenas dos alunos que não tiveram sua nota alterada diretamente no CAGR.';
-$string['confirm_notice'] = 'Você tem certeza que deseja enviar as notas para o Controle Acadêmico (CAGR)?';
+$string['confirm_notice'] = 'Você tem certeza que deseja enviar as notas para o Sistema de Controle Acadêmico da Graduação (CAGR)?';
 $string['all_grades_sent'] = 'Todas as notas foram transpostas para o CAGR';
 $string['all_grades_sent_except_these'] = 'As notas foram transpostas para o CAGR, exceto as dos estudantes listados abaixo:';
 $string['class_not_in_middleware'] = 'Não é possível transpor as notas desta turma.';
