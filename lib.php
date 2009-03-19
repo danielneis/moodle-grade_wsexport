@@ -227,8 +227,7 @@ class grade_report_transposicao extends grade_report {
 
                 $grade_updated_on_cagr = '';
                 $grade_on_cagr_hidden = '';
-                if (($usuario != strtolower($this->cagr_user)) &&
-                    $usuario != 'cagr') {
+                if ($usuario != strtolower($this->cagr_user)) {
 
                     $this->statistics['updated_on_cagr']++;
 
