@@ -198,6 +198,11 @@ class grade_report_transposicao extends grade_report {
 
     private function fill_ok_table() {
 
+        if (!is_array($this->moodle_students)) {
+            // nenhum estudante no moodle
+            return;
+        }
+
         foreach ($this->moodle_students as $student) {
 
             if (isset($this->cagr_grades[$student->username])) {
@@ -380,11 +385,12 @@ class grade_report_transposicao extends grade_report {
             $log_info = "matricula: {$matricula}; nota: {$grade}; mencao: {$i}; frequência: {$f}";
 
             if (!is_null($this->sybase_error)) {
-                $this->send_results[$matricula] = utf8_encode($this->sybase_error);
+                $this->send_results[$matricula] = $this->sybase_error;
                 $log_info .= ' ERRO: '.$this->send_results[$matricula];
             }
             add_to_log($this->courseid, 'grade', 'transposicao', 'send.php', $log_info);
         }
+        $this->send_email_with_errors();
     }
 
     function sybase_error_handler($msgnumber, $severity, $state, $line, $text) {
@@ -440,7 +446,6 @@ class grade_report_transposicao extends grade_report {
     }
 
     private function is_grades_already_in_history() {
-        global $sybase_error;
 
         if (is_null($this->grades_in_history)) {
 
@@ -505,6 +510,21 @@ class grade_report_transposicao extends grade_report {
             return $grade;
         }
         return sprintf("%03.1f", $grade);
+    }
+
+    private function send_email_with_errors() {
+        if (!empty($this->send_results)) {
+
+            $course_name = get_field('course', 'fullname', 'id', $this->courseid);
+            $admin = get_admin();
+            $subject = 'Falha na transposicao de notas da disciplina '.$course_name;
+            $body = '';
+
+            foreach ($this->send_results as $matricula => $error) {
+                $body .= "Matricula: {$matricula}; Erro: {$error}\n";
+            }
+            email_to_user($admin, $admin, $subject, $body);
+        }
     }
 
     private function setup_not_in_cagr_table() {
