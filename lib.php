@@ -31,7 +31,7 @@ class grade_report_transposicao extends grade_report {
     private $sp_cagr_params; // an array with sp_NotasMoodle params
 
     function __construct($courseid, $gpr, $context, $page=null) {
-        global $CFG;
+        global $CFG, $USER;
 
         parent::grade_report($courseid, $gpr, $context, $page);
 
@@ -42,6 +42,11 @@ class grade_report_transposicao extends grade_report {
             $this->sp_cagr_params = array('send' => 11, 'submission_range' => 14, 'logs' => 13);
         } else {
             $this->sp_cagr_params = array('send' => 1, 'submission_range' => 4, 'logs' => 3);
+        }
+
+        // so para garantir que nao tenha lixo
+        if (isset($USER->send_results)) {
+            unset($USER->send_results);
         }
     }
 
@@ -228,18 +233,16 @@ class grade_report_transposicao extends grade_report {
                     $this->statistics['grade_not_formatted']++;
                 }
 
-
                 $sent_date = '';
                 $grade_updated_on_cagr = '';
                 $grade_on_cagr_hidden = '';
+                $usuario = strtolower($current_student->usuario);
 
                 if (is_null($current_student->nota) && $usuario == 'cagr') {
                     $sent_date = get_string('never_sent', 'gradereport_transposicao');
                 } else {
 
                     $sent_date = $current_student->dataAtualizacao;
-
-                    $usuario = strtolower($current_student->usuario);
                     if ($usuario != strtolower($this->cagr_user)) {
 
                         $this->statistics['updated_on_cagr']++;
@@ -396,6 +399,7 @@ class grade_report_transposicao extends grade_report {
             add_to_log($this->courseid, 'grade', 'transposicao', 'send.php', $log_info);
         }
         $this->send_email_with_errors();
+        $USER->send_results = $this->send_results;
     }
 
     function sybase_error_handler($msgnumber, $severity, $state, $line, $text) {
@@ -403,19 +407,6 @@ class grade_report_transposicao extends grade_report {
             $this->sybase_error = null;
         } else {
             $this->sybase_error = $text;
-        }
-    }
-
-    function print_send_results() {
-        if (empty($this->send_results)) {
-            echo '<p>', get_string('all_grades_was_sent', 'gradereport_transposicao'), '</p>';
-        } else {
-            echo '<p>', get_string('some_grades_not_sent', 'gradereport_transposicao'), '</p>',
-                 '<ul class="send_results">';
-            foreach ($this->send_results as $matricula => $msg) {
-                echo '<li>', $matricula, ': ', $msg, '</li>'; 
-            }
-            echo '</ul>';
         }
     }
 

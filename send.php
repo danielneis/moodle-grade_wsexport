@@ -31,28 +31,11 @@ $gpr = new grade_plugin_return(array('type'=>'report', 'plugin'=>'grader', 'cour
 // Initialise the grader report object
 $report = new grade_report_transposicao($courseid, $gpr, $context);
 
-// END "BOOT" LOGIG, STARTING INTERFACE
-$str_grades = get_string('grades');
-$str_transposition = get_string('modulename', 'gradereport_transposicao');
-
-$navigation = grade_build_nav(__FILE__, $str_transposition, $course->id);
-
-/// Print header
-print_header_simple($str_grades.':'.$str_transposition, ':'.$str_grades, $navigation, '', '', true);
-print_grade_plugin_selector($courseid, 'report', 'transposicao');
-
-print_heading($str_transposition, 'left', 1, 'page_title');
-
 if ($report->initialize_cagr_data()) {
     $report->send_grades($grades, $mention, $fi);
-    $report->print_send_results();
+    redirect($CFG->wwwroot.'/grade/report/transposicao/results.php?id='.$courseid);
 } else {
     print_error("could not connect to cagr");
 }
 
-echo '<a href="'.$CFG->wwwroot.'/grade/report/transposicao/index.php?id='.$course->id.'">',
-     get_string('return_to_index', 'gradereport_transposicao'),
-     '</a>';
-
-print_footer($course);
 ?>
