@@ -385,7 +385,7 @@ class grade_report_transposicao extends grade_report {
             $log_info = "matricula: {$matricula}; nota: {$grade}; mencao: {$i}; frequência: {$f}";
 
             if (!is_null($this->sybase_error)) {
-                $this->send_results[$matricula] = $this->sybase_error;
+                $this->send_results[$matricula] = utf8_encode($this->sybase_error);
                 $log_info .= ' ERRO: '.$this->send_results[$matricula];
             }
             add_to_log($this->courseid, 'grade', 'transposicao', 'send.php', $log_info);
@@ -423,7 +423,7 @@ class grade_report_transposicao extends grade_report {
 
         try {
             sybase_set_message_handler(array($this, 'sybase_error_handler'));
-            $this->cagr_db = new TSYBASE($CFG->cagr->host, $CFG->cagr->base, $CFG->cagr->user,$CFG->cagr->pass);
+            $this->cagr_db = new TSYBASE($CFG->cagr->host, $CFG->cagr->base, $CFG->cagr->user,$CFG->cagr->pass, 'cp850');
         } catch (ExceptionDB $e) {
             print_error('cagr_db_not_set', 'gradereport_transposicao');
         }
