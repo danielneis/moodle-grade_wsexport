@@ -228,24 +228,29 @@ class grade_report_transposicao extends grade_report {
                     $this->statistics['grade_not_formatted']++;
                 }
 
-                $usuario = strtolower($current_student->usuario);
 
+                $sent_date = '';
                 $grade_updated_on_cagr = '';
                 $grade_on_cagr_hidden = '';
-                if ($usuario != strtolower($this->cagr_user)) {
-
-                    $this->statistics['updated_on_cagr']++;
-
-                    $grade_updated_on_cagr = get_string('grade_updated_on_cagr', 'gradereport_transposicao');
-
-                    $grade_on_cagr_hidden = '<input type="hidden" name="grades_cagr['.$student->username.'] value="1"/>';
-                }
 
                 if (is_null($current_student->nota) && $usuario == 'cagr') {
                     $sent_date = get_string('never_sent', 'gradereport_transposicao');
                 } else {
+
                     $sent_date = $current_student->dataAtualizacao;
+
+                    $usuario = strtolower($current_student->usuario);
+                    if ($usuario != strtolower($this->cagr_user)) {
+
+                        $this->statistics['updated_on_cagr']++;
+
+                        $grade_updated_on_cagr = get_string('grade_updated_on_cagr', 'gradereport_transposicao');
+
+                        $grade_on_cagr_hidden = '<input type="hidden" name="grades_cagr['.$student->username.'] value="1"/>';
+                    }
                 }
+
+
 
                 $grade_hidden =  '<input type="hidden" name="grades['.$student->username.']" value="'.$moodle_grade.'"/>';
 
