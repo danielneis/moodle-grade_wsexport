@@ -20,6 +20,10 @@ if (!$course = get_record('course', 'id', $courseid)) {
     print_error('invalidcourseid');
 }
 
+if (!is_numeric($USER->username)) {
+    print_error('invalidusername', 'gradereport_transposicao', $CFG->wwwroot.'/grade/report/transposicao/index.php?id='.$courseid);
+}
+
 require_login($course->id);
 $context = get_context_instance(CONTEXT_COURSE, $course->id);
 

@@ -38,4 +38,5 @@ $string['all_grades_was_sent'] = 'Todas as notas foram enviadas.';
 $string['transposicao:view'] = 'Visualizar notas a serem transpostas';
 $string['transposicao:send'] = 'Transpor notas para o CAGR';
 $string['error_on_middleware_connection'] = 'Erro ao conectar ao middleware';
+$string['invalidusername'] = 'Para transpor as notas, o seu username precisa contar apenas números. Nenhuma nota foi transposta.';
 ?>
