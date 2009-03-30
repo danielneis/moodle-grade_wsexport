@@ -80,7 +80,6 @@ class grade_report_transposicao extends grade_report {
                  '</p>';
         }
 
-
         if ($this->is_grades_already_in_history()) {
             echo '<p class="warning prevent">',
                  get_string('grades_already_in_history', 'gradereport_transposicao'),
@@ -113,31 +112,28 @@ class grade_report_transposicao extends grade_report {
         $in_time_to_send = true;
         $str_submit_button = get_string('submit_button', 'gradereport_transposicao');
 
+        echo '<div class="report_footer">';
+
         if (!$this->is_in_time_to_send_grades()) {
             $disable_submission = 'disabled="disabled"';
             $in_time_to_send = false;
-            $str_not_in_time_to_send = " ". get_string('submission_date_range',
-                                                        'gradereport_transposicao',
-                                                        $this->cagr_submission_date_range) .
-                                       " ". get_string('prevent_grade_sent', 'gradereport_transposicao');
-        }
-
-        if (($this->statistics['grade_not_formatted'] > 0) ||
-            $this->is_grades_already_in_history()) {
-            $disable_submission = 'disabled="disabled"';
-        }
-
-
-        echo '<div class="report_footer">';
-
-        if ($this->is_grades_already_in_history()) {
             echo '<p class="warning prevent">',
-                 get_string('grades_already_in_history', 'gradereport_transposicao'),
+                 get_string('submission_date_range', 'gradereport_transposicao', $this->cagr_submission_date_range),
+                 ' ', get_string('prevent_grade_sent', 'gradereport_transposicao') , '</p>';
+        }
+
+        if ($this->statistics['grade_not_formatted'] > 0) {
+            $disable_submission = 'disabled="disabled"';
+            echo '<p class="warning prevent">',
+                 get_string('grades_not_formatted', 'gradereport_transposicao', $this->statistics['grade_not_formatted']),
                  '</p>';
         }
 
-        if (!$in_time_to_send) {
-            echo '<p class="warning prevent">', $str_not_in_time_to_send , '</p>';
+        if ($this->is_grades_already_in_history()) {
+            $disable_submission = 'disabled="disabled"';
+            echo '<p class="warning prevent">',
+                 get_string('grades_already_in_history', 'gradereport_transposicao'),
+                 '</p>';
         }
 
         if ($this->statistics['updated_on_cagr'] > 0) {
@@ -358,6 +354,11 @@ class grade_report_transposicao extends grade_report {
     private function get_submission_date_range() {
         $this->cagr_db->query("EXEC sp_NotasMoodle {$this->sp_cagr_params['submission_range']}");
         $this->cagr_submission_date_range = $this->cagr_db->result[0];
+        // just eye candy
+        $p = (string)$this->cagr_submission_date_range->periodo;
+        $p[5] = $p[4];
+        $p[4] = "/";
+        $this->cagr_submission_date_range->periodo_with_slash = $p;
     }
 
     function send_grades($grades, $mention, $fi) {
@@ -516,8 +517,11 @@ class grade_report_transposicao extends grade_report {
             $subject = 'Falha na transposicao de notas da disciplina '.$course_name;
             $body = '';
 
+            $names = get_records_select('user', 'username IN ('.implode(',', array_keys($this->send_results)) . ')',
+                                        'firstname,lastname', 'username,firstname');
+
             foreach ($this->send_results as $matricula => $error) {
-                $body .= "Matricula: {$matricula}; Erro: {$error}\n";
+                $body .= "Matricula: {$matricula}; {$names[$matricula]->firstname} ; Erro: {$error}\n";
             }
             email_to_user($admin, $admin, $subject, $body);
         }
