@@ -30,6 +30,8 @@ class grade_report_transposicao extends grade_report {
 
     private $sp_cagr_params; // an array with sp_NotasMoodle params
 
+    private $cannot_submit = false; // if there is something preventing grades sending, set it to true
+
     function __construct($courseid, $gpr, $context, $page=null) {
         global $CFG, $USER;
 
@@ -39,9 +41,9 @@ class grade_report_transposicao extends grade_report {
         $this->cagr_user = $CFG->cagr->user;
 
         if (property_exists($CFG, 'transposicao_presencial') && $CFG->transposicao_presencial == true) {
-            $this->sp_cagr_params = array('send' => 11, 'submission_range' => 14, 'logs' => 13);
+            $this->sp_cagr_params = array('send' => 11, 'history' => 12, 'logs' => 13, 'submission_range' => 14);
         } else {
-            $this->sp_cagr_params = array('send' => 1, 'submission_range' => 4, 'logs' => 3);
+            $this->sp_cagr_params = array('send' => 1, 'history' => 2, 'logs' => 3, 'submission_range' => 4);
         }
 
         // so para garantir que nao tenha lixo
@@ -64,85 +66,6 @@ class grade_report_transposicao extends grade_report {
         $this->get_cagr_grades();
         return true;
     }
-
-    function print_header() {
-
-        echo '<p class="grade_range',
-             $this->is_in_time_to_send_grades() ? '' : ' warning prevent' , // add clases if not in submission range
-             '">',
-             get_string('submission_date_range', 'gradereport_transposicao', $this->cagr_submission_date_range),
-             $this->is_in_time_to_send_grades() ? '' : get_string('prevent_grade_sent', 'gradereport_transposicao'),
-             '</p>';
-
-        if ($this->statistics['grade_not_formatted'] > 0) {
-            echo '<p class="warning prevent">',
-                 get_string('grades_not_formatted', 'gradereport_transposicao', $this->statistics['grade_not_formatted']),
-                 '</p>';
-        }
-
-        if ($this->is_grades_already_in_history()) {
-            echo '<p class="warning prevent">',
-                 get_string('grades_already_in_history', 'gradereport_transposicao'),
-                 '</p>';
-        }
-
-        if ($this->statistics['updated_on_cagr'] > 0) {
-            echo '<p class="warning">',
-                 get_string('grades_updated_on_cagr', 'gradereport_transposicao'),
-                 '</p>';
-        }
-
-        echo '<p><a href="#not_in_moodle">',
-              get_string('students_not_in_moodle', 'gradereport_transposicao'),
-             '</a> ', get_string('wont_be_sent', 'gradereport_transposicao'), '</p>',
-             '<p><a href="#not_in_cagr">',
-             get_string('students_not_in_cagr', 'gradereport_transposicao'),
-             '</a> ', get_string('wont_be_sent', 'gradereport_transposicao'),'</p>',
-             '<p><a href="#ok">',
-             get_string('students_ok', 'gradereport_transposicao'),
-             '</a> ', get_string('will_be_sent', 'gradereport_transposicao'),'</p>';
-
-
-       echo "<form method=\"post\" action=\"confirm.php?id={$this->courseid}\">";
-    }
-
-    function print_footer() {
-
-        $disable_submission = '';
-        $in_time_to_send = true;
-        $str_submit_button = get_string('submit_button', 'gradereport_transposicao');
-
-        echo '<div class="report_footer">';
-
-        if (!$this->is_in_time_to_send_grades()) {
-            $disable_submission = 'disabled="disabled"';
-            $in_time_to_send = false;
-            echo '<p class="warning prevent">',
-                 get_string('submission_date_range', 'gradereport_transposicao', $this->cagr_submission_date_range),
-                 ' ', get_string('prevent_grade_sent', 'gradereport_transposicao') , '</p>';
-        }
-
-        if ($this->statistics['grade_not_formatted'] > 0) {
-            $disable_submission = 'disabled="disabled"';
-            echo '<p class="warning prevent">',
-                 get_string('grades_not_formatted', 'gradereport_transposicao', $this->statistics['grade_not_formatted']),
-                 '</p>';
-        }
-
-        if ($this->is_grades_already_in_history()) {
-            $disable_submission = 'disabled="disabled"';
-            echo '<p class="warning prevent">',
-                 get_string('grades_already_in_history', 'gradereport_transposicao'),
-                 '</p>';
-        }
-
-        if ($this->statistics['updated_on_cagr'] > 0) {
-            $this->print_update_grades_selection();
-        }
-
-        echo '<input type="submit" value="',$str_submit_button , '" ', $disable_submission,' />', '</div></form>';
-    }
-
 
     function setup_table() {
 
@@ -168,162 +91,38 @@ class grade_report_transposicao extends grade_report {
         return true;
     }
 
-    private function get_moodle_grade($st_id) {
-        $g = get_field('grade_grades', 'finalgrade',
-                       'itemid', $this->course_grade_item_id,
-                       'userid', $st_id);
-        if ($g != false) {
-            return $this->format_grade($g);
-        } else {
-            return '-';
-        }
-    }
+    function print_header() {
 
-    private function fill_ok_table() {
+        $this->msg_grade_send_dates();
+        $this->msg_grade_not_formatted();
+        $this->msg_grade_already_in_history();
+        $this->msg_grade_updated_on_cagr();
 
-        if (!is_array($this->moodle_students)) {
-            // nenhum estudante no moodle
-            return;
-        }
-
-        foreach ($this->moodle_students as $student) {
-
-            if (isset($this->cagr_grades[$student->username])) {
-                // o estudante esta no cagr
-
-                $current_student = $this->cagr_grades[$student->username];
-
-                $this->statistics['ok']++;
-                unset($this->cagr_grades[$student->username]);
-                
-                list($has_mencao_i, $grade_in_cagr) = $this->get_grade_and_mencao_i($current_student);
-
-                $moodle_grade = $this->get_moodle_grade($student->id);
-                if (is_numeric($moodle_grade)) {
-                    $decimal_value = explode('.', $moodle_grade);
-                    $decimal_value = $decimal_value[1];
-                } else {
-                    $decimal_value = 0;
-                }
-
-                // verifica se a nota estah no padrao ufsc
-                if ( ($moodle_grade > 10) || (($decimal_value != 0) && ($decimal_value != 5))) {
-                    $this->statistics['grade_not_formatted']++;
-                }
-
-                $sent_date = '';
-                $grade_updated_on_cagr = '';
-                $grade_on_cagr_hidden = '';
-                $usuario = strtolower($current_student->usuario);
-
-                if (is_null($current_student->nota) && $usuario == 'cagr') {
-                    $sent_date = get_string('never_sent', 'gradereport_transposicao');
-                } else {
-
-                    $sent_date = $current_student->dataAtualizacao;
-                    if ($usuario != strtolower($this->cagr_user)) {
-
-                        $this->statistics['updated_on_cagr']++;
-
-                        $grade_updated_on_cagr = get_string('grade_updated_on_cagr', 'gradereport_transposicao');
-
-                        $grade_on_cagr_hidden = '<input type="hidden" name="grades_cagr['.$student->username.'] value="1"/>';
-                    }
-                }
-
-
-
-                $grade_hidden =  '<input type="hidden" name="grades['.$student->username.']" value="'.$moodle_grade.'"/>';
-
-                // montando a linha da tabela
-                $row = array(fullname($student),
-                             $moodle_grade.  $grade_hidden . $grade_on_cagr_hidden,
-                             $this->get_checkbox_for_mencao_i($student->username, $has_mencao_i)
-                            );
-
-                if ($this->show_fi) {
-                    $row[] = $this->get_checkbox_for_fi($student->username, $current_student->frequencia == 'FI');
-                }
-
-                $row = array_merge($row, array($grade_in_cagr, $sent_date, $grade_updated_on_cagr));
-
-                $this->table_ok->add_data($row);
-            } else {
-                // o aluno nao esta no cagr
-                $this->not_in_cagr_students[] = $student;
-            }
-        }
-    }
-
-
-    private function fill_not_in_moodle_table() {
-        // by now, $this->cagr_grade contains just the students that are not in moodle
-        // this occurs 'cause this function is called after fill_ok_table()
-        foreach  ($this->cagr_grades as $student) {
-            list($has_mencao_i, $grade_in_cagr) = $this->get_grade_and_mencao_i($student);
-
-            $row = array($student->nome,
-                         '-', // the moodle grade doesn't exist
-                         $this->get_checkbox_for_mencao_i(' ', $has_mencao_i, true));
-            
-            if ($this->show_fi) {
-                $row[] = $this->get_checkbox_for_fi($student->matricula, $student->frequencia == 'FI', true);
-            }
-
-            if (is_null($student->nota) && strtolower($student->usuario) == 'cagr') {
-                $sent_date = get_string('never_sent', 'gradereport_transposicao');
-            } else {
-                $sent_date = $student->dataAtualizacao;
-            }
-
-            $row = array_merge($row, array($grade_in_cagr, $sent_date, ''));
-
-            $this->table_not_in_moodle->add_data($row);
-        }
-        $this->statistics['not_in_moodle'] = sizeof($this->cagr_grades);
-    }
-
-    private function fill_not_in_cagr_table() {
-
-        $this->statistics['not_in_cagr'] = sizeof($this->not_in_cagr_students);
-        foreach ($this->not_in_cagr_students as $student) {
-            $has_mencao_i = '';
-            $grade_in_cagr = '';
-            $sent_date = '';
-
-            $moodle_grade = $this->get_moodle_grade($student->id);
-
-            $row = array(fullname($student),
-                         $moodle_grade,
-                         $this->get_checkbox_for_mencao_i(' ', $has_mencao_i, true));
-
-            if ($this->show_fi) {
-                $row[] = $this->get_checkbox_for_fi($student->username, false, true);
-            }
-            $row = array_merge($row, array($grade_in_cagr, $sent_date, ''));
-
-            $this->table_not_in_cagr->add_data($row);
-        }
+        echo "<form method=\"post\" action=\"confirm.php?id={$this->courseid}\">";
     }
 
     function print_table() {
         ob_start();
 
-        echo '<h2 class="table_title"><a name="not_in_moodle"></a>', get_string('students_not_in_moodle', 'gradereport_transposicao');
         if ($this->statistics['not_in_moodle'] > 0) {
-           echo ' - ', $this->statistics['not_in_moodle'], get_string('students', 'gradereport_transposicao');
+            echo '<h2 class="table_title">',
+                 get_string('students_not_in_moodle', 'gradereport_transposicao'),
+                 ' - ', $this->statistics['not_in_moodle'], get_string('students', 'gradereport_transposicao'),
+                 get_string('wont_be_sent', 'gradereport_transposicao'),
+                 '</h2>';
+            $this->table_not_in_moodle->print_html();
         }
-        echo '</h2>';
-        $this->table_not_in_moodle->print_html();
 
-        echo '<h2 class="table_title"><a name="not_in_cagr"></a>', get_string('students_not_in_cagr', 'gradereport_transposicao');
         if ($this->statistics['not_in_cagr'] > 0) {
-            echo ' - ', $this->statistics['not_in_cagr'], get_string('students', 'gradereport_transposicao');
+            echo '<h2 class="table_title">',
+                 get_string('students_not_in_cagr', 'gradereport_transposicao'),
+                 ' - ', $this->statistics['not_in_cagr'], get_string('students', 'gradereport_transposicao'),
+                 get_string('wont_be_sent', 'gradereport_transposicao'),
+                 '</h2>';
+            $this->table_not_in_cagr->print_html();
         }
-        echo '</h2>';
-        $this->table_not_in_cagr->print_html();
 
-        echo '<h2 class="table_title"><a name="ok"></a>', get_string('students_ok', 'gradereport_transposicao');
+        echo '<h2 class="table_title">', get_string('students_ok', 'gradereport_transposicao');
         if ($this->statistics['ok'] > 0) {
             echo ' - ', $this->statistics['ok'], get_string('students', 'gradereport_transposicao');
         }
@@ -331,6 +130,22 @@ class grade_report_transposicao extends grade_report {
         $this->table_ok->print_html();
 
         return ob_get_clean();
+    }
+
+    function print_footer() {
+
+        echo '<div class="report_footer">';
+
+        $this->msg_grade_send_dates();
+        $this->msg_grade_not_formatted();
+        $this->msg_grade_already_in_history();
+        $this->msg_grade_updated_on_cagr();
+        $this->select_overwrite_grades();
+
+        $str_submit_button = get_string('submit_button', 'gradereport_transposicao');
+        $dis = ($this->cannot_submit == true) ? 'disabled="disabled"' : '';
+
+        echo '<input type="submit" value="',$str_submit_button , '" ', $dis,' />', '</div></form>';
     }
 
     function send_grades($grades, $mention, $fi) {
@@ -383,6 +198,142 @@ class grade_report_transposicao extends grade_report {
         }
     }
 
+    private function get_moodle_grade($st_id) {
+        $g = get_field('grade_grades', 'finalgrade',
+                       'itemid', $this->course_grade_item_id,
+                       'userid', $st_id);
+        if ($g != false) {
+            return $this->format_grade($g);
+        } else {
+            return '-';
+        }
+    }
+
+    private function fill_ok_table() {
+
+        if (!is_array($this->moodle_students)) {
+            return; // nenhum estudante no moodle
+        }
+
+        // um primeiro loop para pegar a nota do moodle e verificar se existe alguma fora do padrao ufsc
+        foreach ($this->moodle_students as $student) {
+            $student->moodle_grade = $this->get_moodle_grade($student->id);
+            if (is_numeric($student->moodle_grade)) {
+                $decimal_value = explode('.', $moodle_grade);
+                $decimal_value = $decimal_value[1];
+            } else {
+                $decimal_value = 0;
+            }
+            if ( ($student->moodle_grade > 10) || (($decimal_value != 0) && ($decimal_value != 5))) {
+                $this->statistics['grade_not_formatted']++;
+                $this->cannot_submit = true;
+            }
+        }
+
+        // agora o loop que preenche a tabela
+        foreach ($this->moodle_students as $student) {
+            if (isset($this->cagr_grades[$student->username])) {
+                // o estudante esta no cagr
+
+                $current_student = $this->cagr_grades[$student->username];
+
+                $this->statistics['ok']++;
+                unset($this->cagr_grades[$student->username]);
+                
+                list($has_mencao_i, $grade_in_cagr) = $this->get_grade_and_mencao_i($current_student);
+
+                $sent_date = '';
+                $grade_updated_on_cagr = '';
+                $grade_on_cagr_hidden = '';
+                $usuario = strtolower($current_student->usuario);
+
+                if (is_null($current_student->nota) && $usuario == 'cagr') {
+                    $sent_date = get_string('never_sent', 'gradereport_transposicao');
+                } else {
+
+                    $sent_date = $current_student->dataAtualizacao;
+                    if ($usuario != strtolower($this->cagr_user)) {
+
+                        $this->statistics['updated_on_cagr']++;
+
+                        $grade_updated_on_cagr = get_string('grade_updated_on_cagr', 'gradereport_transposicao');
+
+                        $grade_on_cagr_hidden = '<input type="hidden" name="grades_cagr['.$student->username.'] value="1"/>';
+                    }
+                }
+
+                $grade_hidden =  '<input type="hidden" name="grades['.$student->username.']" value="'.$student->moodle_grade.'"/>';
+
+                // montando a linha da tabela
+                $row = array(fullname($student),
+                             $student->moodle_grade.  $grade_hidden . $grade_on_cagr_hidden,
+                             $this->get_checkbox_for_mencao_i($student->username, $has_mencao_i, $this->cannot_submit)
+                            );
+
+                if ($this->show_fi) {
+                    $row[] = $this->get_checkbox_for_fi($student->username, $current_student->frequencia == 'FI', $this->cannot_submit);
+                }
+
+                $row = array_merge($row, array($grade_in_cagr, $sent_date, $grade_updated_on_cagr));
+
+                $this->table_ok->add_data($row);
+            } else {
+                // o aluno nao esta no cagr
+                $this->not_in_cagr_students[] = $student;
+            }
+        }
+    }
+
+    private function fill_not_in_moodle_table() {
+        // by now, $this->cagr_grade contains just the students that are not in moodle
+        // this occurs 'cause this function is called after fill_ok_table()
+        foreach  ($this->cagr_grades as $student) {
+            list($has_mencao_i, $grade_in_cagr) = $this->get_grade_and_mencao_i($student);
+
+            $row = array($student->nome,
+                         '-', // the moodle grade doesn't exist
+                         $this->get_checkbox_for_mencao_i(' ', $has_mencao_i, true));
+            
+            if ($this->show_fi) {
+                $row[] = $this->get_checkbox_for_fi($student->matricula, $student->frequencia == 'FI', true);
+            }
+
+            if (is_null($student->nota) && strtolower($student->usuario) == 'cagr') {
+                $sent_date = get_string('never_sent', 'gradereport_transposicao');
+            } else {
+                $sent_date = $student->dataAtualizacao;
+            }
+
+            $row = array_merge($row, array($grade_in_cagr, $sent_date, ''));
+
+            $this->table_not_in_moodle->add_data($row);
+        }
+        $this->statistics['not_in_moodle'] = sizeof($this->cagr_grades);
+    }
+
+    private function fill_not_in_cagr_table() {
+
+        $this->statistics['not_in_cagr'] = sizeof($this->not_in_cagr_students);
+        foreach ($this->not_in_cagr_students as $student) {
+            $has_mencao_i = '';
+            $grade_in_cagr = '';
+            $sent_date = '';
+
+            $moodle_grade = $this->get_moodle_grade($student->id);
+
+            $row = array(fullname($student),
+                         $moodle_grade,
+                         $this->get_checkbox_for_mencao_i(' ', $has_mencao_i, true));
+
+            if ($this->show_fi) {
+                $row[] = $this->get_checkbox_for_fi($student->username, false, true);
+            }
+            $row = array_merge($row, array($grade_in_cagr, $sent_date, ''));
+
+            $this->table_not_in_cagr->add_data($row);
+        }
+    }
+
     private function connect_to_cagr() {
         global $CFG;
 
@@ -418,21 +369,22 @@ class grade_report_transposicao extends grade_report {
 
         if (is_null($this->grades_in_history)) {
 
-            $sql = "EXEC sp_NotasMoodle {$this->sp_cagr_params['logs']},
+            $sql = "EXEC sp_NotasMoodle {$this->sp_cagr_params['history']},
                     {$this->klass->periodo}, '{$this->klass->disciplina}', '{$this->klass->turma}'";
 
             $this->cagr_db->query($sql);
 
             $found = false;
             if (is_array($this->cagr_db->result)) {
-                foreach ($this->cagr_db->result as $log)  {
-                    if (is_string($log->dtHistorico)) {
+                foreach ($this->cagr_db->result as $h)  {
+                    if (!is_null($h->nota)) {
                         $found = true;
                         break;
                     }
                 }
             }
             $this->grades_in_history = $found;
+            $this->cannot_submit = true;
         }
         return $this->grades_in_history;
     }
@@ -562,7 +514,7 @@ class grade_report_transposicao extends grade_report {
     private function get_table_headers() {
 
         $h = array(get_string('name'),
-                   get_string('grade'),
+                   get_string('moodle_grade', 'gradereport_transposicao'),
                    get_string('mention', 'gradereport_transposicao')
                   );
 
@@ -573,7 +525,8 @@ class grade_report_transposicao extends grade_report {
         return array_merge($h, array(get_string('cagr_grade', 'gradereport_transposicao'),
                                      get_string('sent_date', 'gradereport_transposicao'),
                                      get_string('alerts', 'gradereport_transposicao'),
-                                    ));
+                                    )
+                          );
     }
 
     private function get_table_columns() {
@@ -596,23 +549,38 @@ class grade_report_transposicao extends grade_report {
         return '<input type="checkbox" name="fi['.$st_username.']" '.$check.' value="1" '.$dis.'/>';
     }
 
-    private function is_in_time_to_send_grades() {
+    private function about_send_dates() {
+
         $now = time();
         $start_date = explode('/', $this->cagr_submission_date_range->dtInicial);
         $end_date = explode('/', $this->cagr_submission_date_range->dtFinal);
-        $period = $this->cagr_submission_date_range->periodo;
 
-        return ($this->klass->periodo == $period) &&
-               (strtotime("{$start_date[1]}/{$start_date[0]}/{$start_date[2]} 00:00:00") <= $now) &&
-               ($now <= strtotime("{$end_date[1]}/{$end_date[0]}/{$end_date[2]} 23:59:59"));
+        if (!(strtotime("{$start_date[1]}/{$start_date[0]}/{$start_date[2]} 00:00:00") <= $now) &&
+            !($now <= strtotime("{$end_date[1]}/{$end_date[0]}/{$end_date[2]} 23:59:59"))) {
+            return 'send_date_not_in_time';
+            $this->cannot_submit = true;
+        }
+
+        $period = $this->cagr_submission_date_range->periodo;
+        if ($this->klass->periodo != $period) {
+            return 'send_date_not_in_period';
+            $this->cannot_submit = true;
+        }
+
+        return 'send_date_ok';
     }
 
-    private function print_update_grades_selection() {
+    private function select_overwrite_grades() {
 
-        echo '<p class="overwrite_all">',
-             '<input type="checkbox" id="overwrite_all" name="overwrite_all" value="1">',
-             '<label for="overwrite_all">',get_string('overwrite_all_grades', 'gradereport_transposicao'), '</label>',
-             '</p>';
+        if ($this->statistics['updated_on_cagr'] > 0) {
+
+            $dis = $this->cannot_submit == true ? 'disable="disable"' : '';
+            echo '<p class="overwrite_all">',
+                 '<input type="checkbox" id="overwrite_all" name="overwrite_all" value="1"', $dis, '>',
+                 '<label for="overwrite_all">',get_string('overwrite_all_grades', 'gradereport_transposicao'), '</label>',
+                 '</p>';
+        }
+
     }
 
     private function get_submission_date_range() {
@@ -623,6 +591,42 @@ class grade_report_transposicao extends grade_report {
         $p[5] = $p[4];
         $p[4] = "/";
         $this->cagr_submission_date_range->periodo_with_slash = $p;
+    }
+
+    private function msg_grade_not_formatted() {
+        if ($this->statistics['grade_not_formatted'] > 0) {
+            echo '<p class="warning prevent">',
+                 get_string('grades_not_formatted', 'gradereport_transposicao', $this->statistics['grade_not_formatted']),
+                 '</p>';
+        }
+    }
+
+    private function msg_grade_already_in_history() {
+        if ($this->is_grades_already_in_history()) {
+            echo '<p class="warning prevent">',
+                 get_string('grades_already_in_history', 'gradereport_transposicao'),
+                 '</p>';
+        }
+    }
+
+    private function msg_grade_updated_on_cagr() {
+        if ($this->statistics['updated_on_cagr'] > 0) {
+            echo '<p class="warning">',
+                 get_string('grades_updated_on_cagr', 'gradereport_transposicao'),
+                 '</p>';
+        }
+    }
+
+    private function msg_grade_send_dates() {
+        $about  = $this->about_send_dates();
+        $class = '';
+        if ($about != 'send_date_ok') {
+            $class = ' warning prevent';
+            $this->cannot_submit = true;
+        }
+        echo '<p class="grade_range', $class, '">',
+             get_string($about, 'gradereport_transposicao', $this->cagr_submission_date_range),
+             '</p>';
     }
 
 }
