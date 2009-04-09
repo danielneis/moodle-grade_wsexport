@@ -143,24 +143,6 @@ class grade_report_transposicao extends grade_report {
         echo '<input type="submit" value="',$str_submit_button , '" ', $disable_submission,' />', '</div></form>';
     }
 
-    private function is_in_time_to_send_grades() {
-        $now = time();
-        $start_date = explode('/', $this->cagr_submission_date_range->dtInicial);
-        $end_date = explode('/', $this->cagr_submission_date_range->dtFinal);
-        $period = $this->cagr_submission_date_range->periodo;
-
-        return ($this->klass->periodo == $period) &&
-               (strtotime("{$start_date[1]}/{$start_date[0]}/{$start_date[2]} 00:00:00") <= $now) &&
-               ($now <= strtotime("{$end_date[1]}/{$end_date[0]}/{$end_date[2]} 23:59:59"));
-    }
-
-    private function print_update_grades_selection() {
-
-        echo '<p class="overwrite_all">',
-             '<input type="checkbox" id="overwrite_all" name="overwrite_all" value="1">',
-             '<label for="overwrite_all">',get_string('overwrite_all_grades', 'gradereport_transposicao'), '</label>',
-             '</p>';
-    }
 
     function setup_table() {
 
@@ -349,16 +331,6 @@ class grade_report_transposicao extends grade_report {
         $this->table_ok->print_html();
 
         return ob_get_clean();
-    }
-
-    private function get_submission_date_range() {
-        $this->cagr_db->query("EXEC sp_NotasMoodle {$this->sp_cagr_params['submission_range']}");
-        $this->cagr_submission_date_range = $this->cagr_db->result[0];
-        // just eye candy
-        $p = (string)$this->cagr_submission_date_range->periodo;
-        $p[5] = $p[4];
-        $p[4] = "/";
-        $this->cagr_submission_date_range->periodo_with_slash = $p;
     }
 
     function send_grades($grades, $mention, $fi) {
@@ -623,5 +595,35 @@ class grade_report_transposicao extends grade_report {
         $check = $has_fi ? 'checked="checked"' : '';
         return '<input type="checkbox" name="fi['.$st_username.']" '.$check.' value="1" '.$dis.'/>';
     }
+
+    private function is_in_time_to_send_grades() {
+        $now = time();
+        $start_date = explode('/', $this->cagr_submission_date_range->dtInicial);
+        $end_date = explode('/', $this->cagr_submission_date_range->dtFinal);
+        $period = $this->cagr_submission_date_range->periodo;
+
+        return ($this->klass->periodo == $period) &&
+               (strtotime("{$start_date[1]}/{$start_date[0]}/{$start_date[2]} 00:00:00") <= $now) &&
+               ($now <= strtotime("{$end_date[1]}/{$end_date[0]}/{$end_date[2]} 23:59:59"));
+    }
+
+    private function print_update_grades_selection() {
+
+        echo '<p class="overwrite_all">',
+             '<input type="checkbox" id="overwrite_all" name="overwrite_all" value="1">',
+             '<label for="overwrite_all">',get_string('overwrite_all_grades', 'gradereport_transposicao'), '</label>',
+             '</p>';
+    }
+
+    private function get_submission_date_range() {
+        $this->cagr_db->query("EXEC sp_NotasMoodle {$this->sp_cagr_params['submission_range']}");
+        $this->cagr_submission_date_range = $this->cagr_db->result[0];
+        // just eye candy
+        $p = (string)$this->cagr_submission_date_range->periodo;
+        $p[5] = $p[4];
+        $p[4] = "/";
+        $this->cagr_submission_date_range->periodo_with_slash = $p;
+    }
+
 }
 ?>
