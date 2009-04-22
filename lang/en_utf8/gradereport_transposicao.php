@@ -2,7 +2,7 @@
 $string['alerts'] = 'Alertas';
 $string['all_grades_sent_except_these'] = 'As notas foram transpostas para o CAGR, exceto as dos estudantes listados abaixo:';
 $string['all_grades_sent'] = 'Todas as notas foram transpostas para o CAGR';
-$string['all_grades_was_sent'] = 'Todas as notas foram enviadas.';
+$string['all_grades_was_sent'] = 'Todas as notas foram transpostas.';
 $string['cagr_db_not_set'] = 'Parâmetros de comunicação com o CAGR não definidos, informe o administrador.';
 $string['cagr_connection_error'] = 'Não foi possível conectar ao CAGR.';
 $string['cagr_grade'] = 'Nota no CAGR';
@@ -27,20 +27,19 @@ $string['overwrite_all_grades'] = 'Sobrepor notas que foram digitadas diretament
 $string['prevent_grade_sent'] = ' Isto impede o envio de notas.';
 $string['return_to_index'] = 'Voltar à relação de notas.';
 $string['send_date_not_in_time'] = 'As notas desta turma não podem ser transpostas para o CAGR pois no momento a digitação de notas não está aberta para nenhum período. No momento, o CAGR está configurado para digitação de notas do período $a->periodo_with_slash, de $a->dtInicial até $a->dtFinal.';
-$string['send_date_not_in_period'] = 'As notas desta turma não podem ser transpostas para o CAGR pois no momento a digitação de notas está aberta para turmas do periodo $a->periodo_with_slash. No momento, o CAGR está configurado para digitação de notas do período $a->periodo_with_slash, de $a->dtInicial até $a->dtFinal.';
+$string['send_date_not_in_period'] = 'As notas desta turma não podem ser transpostas para o CAGR pois a digitação de notas está aberta para turmas do periodo $a->periodo_with_slash. No momento, o CAGR está configurado para digitação de notas do período $a->periodo_with_slash, de $a->dtInicial até $a->dtFinal.';
 $string['send_date_ok'] = 'O envio de notas está aberto para as disciplinas de $a->periodo_with_slash e pode ser feito entre $a->dtInicial e $a->dtFinal';
 $string['sent_date'] = 'Data de envio';
-$string['some_grades_not_sent'] = 'As notas abaixo não foram enviadas.';
+$string['some_grades_not_sent'] = 'As notas abaixo não foram transpostas.';
 $string['students'] = ' aluno(s)';
 $string['students_not_in_cagr'] = 'Alunos cadastrados no AVEA mas não no CAGR';
 $string['students_not_in_moodle'] = 'Alunos matriculados na turma do CAGR mas não no Moodle';
 $string['students_ok'] = 'Alunos cadastrados no AVEA e no CAGR';
-$string['submit_button'] = 'Enviar notas';
+$string['submit_button'] = 'Transpor notas para o CAGR';
 $string['transposicao:send'] = 'Transpor notas para o CAGR';
 $string['transposicao:view'] = 'Visualizar notas a serem transpostas';
-$string['user:view'] = 'Enviar notas para o CAGR';
-$string['will_be_sent'] = '(Essas notas serão enviadas)';
-$string['will_overwrite_grades'] = 'Você optou por substituir as notas de todos os alunos enviadas anteriormente.';
-$string['wont_be_sent'] = ' <span class=\"wont_be_sent\">Atenção: Essas notas não serão enviadas</span>';
+$string['will_be_sent'] = '(Essas notas serão transpostas)';
+$string['will_overwrite_grades'] = 'Você optou por substituir as notas de todos os alunos transpostas anteriormente.';
+$string['wont_be_sent'] = ' <span class=\"wont_be_sent\">Atenção: Essas notas não serão transpostas</span>';
 $string['wont_overwrite_grades'] = 'Você optou por substituir as notas apenas dos alunos que não tiveram sua nota alterada diretamente no CAGR.';
 ?>
