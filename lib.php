@@ -367,7 +367,7 @@ class grade_report_transposicao extends grade_report {
 
         if (is_null($this->grades_in_history)) {
 
-            $sql = "EXEC sp_NotasMoodle {$this->sp_cagr_params['history']},
+            $sql = "EXEC sp_NotasMoodle {$this->sp_cagr_params['logs']},
                     {$this->klass->periodo}, '{$this->klass->disciplina}', '{$this->klass->turma}'";
 
             $result = $this->cagr_db->GetArray($sql);
@@ -375,7 +375,7 @@ class grade_report_transposicao extends grade_report {
             $found = false;
             if (is_array($result)) {
                 foreach ($result as $h)  {
-                    if (!is_null($h['nota'])) {
+                    if (!is_null($h['dtHistorico'])) {
                         $found = true;
                         $this->cannot_submit = true;
                         break;
