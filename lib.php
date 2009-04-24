@@ -251,7 +251,8 @@ class grade_report_transposicao extends grade_report {
                 } else {
 
                     $sent_date = $current_student['dataAtualizacao'];
-                    if ($usuario != strtolower($this->cagr_user)) {
+                    if (!$this->is_grades_already_in_history() &&
+                        $usuario != strtolower($this->cagr_user)) {
 
                         $this->statistics['updated_on_cagr']++;
 
