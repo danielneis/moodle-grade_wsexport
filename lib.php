@@ -75,9 +75,11 @@ class grade_report_transposicao extends grade_report {
         $context = get_context_instance(CONTEXT_COURSE, $this->courseid);
         $this->moodle_students = get_role_users(get_field('role', 'id', 'shortname', 'student'), $context, false, '', 'u.firstname, u.lastname');
 
+        if (!$id_course_grade = get_field('course_meta', 'parent_course', 'child_course', $this->courseid)) {
+            $id_course_grade = $this->courseid;
+        }
         // Get course grade_item
-        $this->course_grade_item_id = get_field('grade_items', 'id', 'itemtype', 'course', 'courseid', $this->courseid);
-
+        $this->course_grade_item_id = get_field('grade_items', 'id', 'itemtype', 'course', 'courseid', $id_course_grade);
         return true;
     }
 
