@@ -31,7 +31,10 @@ class grade_report_transposicao extends grade_report {
 
     private $cannot_submit = false; // if there is something preventing grades sending, set it to true
 
-    function __construct($courseid, $gpr, $context, $page=null) {
+    private $using_metacourse_grades = false; // if we retrieving grades from metacourse
+    private $has_metacourse = false; // if courseid belongs to a metacourse
+
+    function __construct($courseid, $gpr, $context, $page=null, $force_course_grades) {
         global $CFG, $USER;
 
         parent::grade_report($courseid, $gpr, $context, $page);
@@ -45,7 +48,11 @@ class grade_report_transposicao extends grade_report {
             $this->sp_cagr_params = array('send' => 1, 'history' => 2, 'logs' => 3, 'submission_range' => 4);
         }
 
-        // so para garantir que nao tenha lixo
+        $context = get_context_instance(CONTEXT_COURSE, $this->courseid);
+        $this->moodle_students = get_role_users(get_field('role', 'id', 'shortname', 'student'), $context, false, '', 'u.firstname, u.lastname');
+
+        $this->get_course_grade_item($force_course_grades);
+
         if (isset($USER->send_results)) {
             unset($USER->send_results);
         }
@@ -68,19 +75,26 @@ class grade_report_transposicao extends grade_report {
 
     function setup_table() {
 
-        $this->setup_ok_table();
-        $this->setup_not_in_cagr_table();
-        $this->setup_not_in_moodle_table();
+        return ($this->setup_ok_table() &&
+                $this->setup_not_in_cagr_table() &&
+                $this->setup_not_in_moodle_table());
+    }
 
-        $context = get_context_instance(CONTEXT_COURSE, $this->courseid);
-        $this->moodle_students = get_role_users(get_field('role', 'id', 'shortname', 'student'), $context, false, '', 'u.firstname, u.lastname');
+    private function get_course_grade_item($force_course_grades) {
+        
+        if ($id_course_grade = get_field('course_meta', 'parent_course', 'child_course', $this->courseid)) {
+            $this->has_metacourse = true;
+            $this->using_metacourse_grades = true;
+        }
 
-        if (!$id_course_grade = get_field('course_meta', 'parent_course', 'child_course', $this->courseid)) {
+        if ($force_course_grades) {
+            $this->using_metacourse_grades = false;
             $id_course_grade = $this->courseid;
         }
-        // Get course grade_item
-        $this->course_grade_item_id = get_field('grade_items', 'id', 'itemtype', 'course', 'courseid', $id_course_grade);
-        return true;
+
+        $this->course_grade_item_id = get_field('grade_items', 'id',
+                                                'itemtype', 'course',
+                                                'courseid', $id_course_grade);
     }
 
 
@@ -98,6 +112,7 @@ class grade_report_transposicao extends grade_report {
         $this->msg_grade_not_formatted();
         $this->msg_grade_already_in_history();
         $this->msg_grade_updated_on_cagr();
+        $this->msg_using_metacourse_grades();
 
         echo "<form method=\"post\" action=\"confirm.php?id={$this->courseid}\">";
     }
@@ -470,6 +485,7 @@ class grade_report_transposicao extends grade_report {
         }
 
         $this->table_not_in_cagr->setup();
+        return true;
     }
 
     private function setup_not_in_moodle_table() {
@@ -490,6 +506,7 @@ class grade_report_transposicao extends grade_report {
         }
 
         $this->table_not_in_moodle->setup();
+        return true;
     }
 
     private function setup_ok_table() {
@@ -510,6 +527,7 @@ class grade_report_transposicao extends grade_report {
         }
 
         $this->table_ok->setup();
+        return true;
     }
 
     private function get_table_headers() {
@@ -634,6 +652,23 @@ class grade_report_transposicao extends grade_report {
         echo '<p class="grade_range', $class, '">',
              get_string($about, 'gradereport_transposicao', $this->cagr_submission_date_range),
              '</p>';
+    }
+
+    private function msg_using_metacourse_grades() {
+        global $CFG;
+        if ($this->using_metacourse_grades) {
+            echo '<p class="warning">',
+                 get_string('using_metacourse_grades', 'gradereport_transposicao'),
+                 ' <a href="'.$CFG->wwwroot.'/grade/report/transposicao/index.php?id='.$this->courseid.'&force_course_grades=1">',
+                 get_string('dont_use_metacourse_grades', 'gradereport_transposicao');
+                 '</a></p>';
+        } else if ($this->has_metacourse) {
+            echo '<p class="warning">',
+                 get_string('using_course_grades', 'gradereport_transposicao'),
+                 ' <a href="'.$CFG->wwwroot.'/grade/report/transposicao/index.php?id='.$this->courseid.'&force_course_grades=0">',
+                 get_string('use_metacourse_grades', 'gradereport_transposicao');
+                 '</a></p>';
+        }
     }
 }
 ?>
