@@ -660,13 +660,13 @@ class grade_report_transposicao extends grade_report {
             echo '<p class="warning">',
                  get_string('using_metacourse_grades', 'gradereport_transposicao'),
                  ' <a href="'.$CFG->wwwroot.'/grade/report/transposicao/index.php?id='.$this->courseid.'&force_course_grades=1">',
-                 get_string('dont_use_metacourse_grades', 'gradereport_transposicao');
+                 get_string('dont_use_metacourse_grades', 'gradereport_transposicao'),
                  '</a></p>';
         } else if ($this->has_metacourse) {
             echo '<p class="warning">',
                  get_string('using_course_grades', 'gradereport_transposicao'),
                  ' <a href="'.$CFG->wwwroot.'/grade/report/transposicao/index.php?id='.$this->courseid.'&force_course_grades=0">',
-                 get_string('use_metacourse_grades', 'gradereport_transposicao');
+                 get_string('use_metacourse_grades', 'gradereport_transposicao'),
                  '</a></p>';
         }
     }
