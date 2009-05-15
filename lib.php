@@ -80,21 +80,21 @@ class grade_report_transposicao extends grade_report {
                 $this->setup_not_in_moodle_table());
     }
 
-    private function get_course_grade_item($force_course_grades) {
+    private function get_course_grade_item($force_course_grades = false) {
         
         if ($id_course_grade = get_field('course_meta', 'parent_course', 'child_course', $this->courseid)) {
             $this->has_metacourse = true;
             $this->using_metacourse_grades = true;
-        }
 
-        if ($force_course_grades) {
-            $this->using_metacourse_grades = false;
+            if ($force_course_grades) {
+                $this->using_metacourse_grades = false;
+                $id_course_grade = $this->courseid;
+            }
+        } else {
             $id_course_grade = $this->courseid;
         }
 
-        $this->course_grade_item_id = get_field('grade_items', 'id',
-                                                'itemtype', 'course',
-                                                'courseid', $id_course_grade);
+        $this->course_grade_item_id = get_field('grade_items', 'id', 'itemtype', 'course', 'courseid', $id_course_grade);
     }
 
 
