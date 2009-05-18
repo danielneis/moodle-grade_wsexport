@@ -574,7 +574,7 @@ class grade_report_transposicao extends grade_report {
         $start_date = explode('/', $this->cagr_submission_date_range->dtInicial);
         $end_date = explode('/', $this->cagr_submission_date_range->dtFinal);
 
-        if (!(strtotime("{$start_date[1]}/{$start_date[0]}/{$start_date[2]} 00:00:00") <= $now) &&
+        if (!(strtotime("{$start_date[1]}/{$start_date[0]}/{$start_date[2]} 00:00:00") <= $now) ||
             !($now <= strtotime("{$end_date[1]}/{$end_date[0]}/{$end_date[2]} 23:59:59"))) {
             return 'send_date_not_in_time';
             $this->cannot_submit = true;
