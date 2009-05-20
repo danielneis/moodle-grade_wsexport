@@ -27,17 +27,8 @@ grade_regrade_final_grades($courseid);//first make sure we have proper final gra
 $gpr = new grade_plugin_return(array('type'=>'report', 'plugin'=>'grader', 'courseid'=>$courseid));// return tracking object
 $report = new grade_report_transposicao($courseid, $gpr, $context, null, $force_course_grades);// Initialise the grader report object
 
-// Build navigation
-$str_grades = get_string('grades');
-$str_transposition = get_string('modulename', 'gradereport_transposicao');
-
-$navigation = grade_build_nav(__FILE__, $str_transposition, $course->id);
-
 /// Print header
-print_header_simple($str_grades.':'.$str_transposition, ': '.$str_grades, $navigation, '', '', true);
-print_grade_plugin_selector($courseid, 'report', 'transposicao');
-
-print_heading($str_transposition, 'left', 1, 'page_title');
+print_grade_page_head($COURSE->id, 'report', 'transposicao');
 
 if ($report->initialize_cagr_data() && $report->setup_table() && $report->fill_table()) {
     echo $report->print_header(),
