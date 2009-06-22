@@ -13,14 +13,12 @@ if (!$course = get_record('course', 'id', $courseid)) {
 }
 
 require_login($course->id);
+$context = get_context_instance(CONTEXT_COURSE, $course->id);
+require_capability('gradereport/transposicao:view', $context);
 
 if ($course->metacourse > 0) {
     print_error(get_string('is_metacourse_error', 'gradereport_transposicao'));
 }
-
-$context = get_context_instance(CONTEXT_COURSE, $course->id);
-
-require_capability('gradereport/transposicao:view', $context);
 
 grade_regrade_final_grades($courseid);//first make sure we have proper final grades
 

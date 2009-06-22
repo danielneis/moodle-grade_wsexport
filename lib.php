@@ -263,7 +263,7 @@ class grade_report_transposicao extends grade_report {
                 $grade_on_cagr_hidden = '';
                 $usuario = strtolower($current_student['usuario']);
 
-                if (is_null($current_student['nota']) && $usuario == 'cagr') {
+                if (is_null($current_student['nota'])) {
                     $sent_date = get_string('never_sent', 'gradereport_transposicao');
                 } else {
 
