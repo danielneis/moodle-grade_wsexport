@@ -34,7 +34,7 @@ class grade_report_transposicao extends grade_report {
     private $using_metacourse_grades = false; // if we retrieving grades from metacourse
     private $has_metacourse = false; // if courseid belongs to a metacourse
 
-    private $data_format = "d/M/Y h:i"; // o formato da data mostrada na listagem
+    private $data_format = "d/m/Y h:i"; // o formato da data mostrada na listagem
 
     function __construct($courseid, $gpr, $context, $page=null, $force_course_grades) {
         global $CFG, $USER;
@@ -259,6 +259,7 @@ class grade_report_transposicao extends grade_report {
                 unset($this->cagr_grades[$student->username]);
                 
                 list($has_mencao_i, $grade_in_cagr) = $this->get_grade_and_mencao_i($current_student);
+                $has_fi = $current_student['frequencia'] == 'FI';
 
                 $sent_date = '';
                 $alert = '';
@@ -270,8 +271,8 @@ class grade_report_transposicao extends grade_report {
                 } else {
 
                     $sent_date = date($this->data_format, strtotime($current_student['dataAtualizacao']));
-                    if (!$this->is_grades_already_in_history() &&
-                        $usuario != strtolower($this->cagr_user)) {
+
+                    if (!$this->is_grades_already_in_history() && $usuario != strtolower($this->cagr_user)) {
 
                         $this->statistics['updated_on_cagr']++;
 
@@ -283,12 +284,15 @@ class grade_report_transposicao extends grade_report {
 
                 $grade_hidden =  '<input type="hidden" name="grades['.$student->username.']" value="'.$student->moodle_grade.'"/>';
 
-                if ($student->moodle_grade != $grade_in_cagr) {
+                if ((($has_fi || $student->moodle_grade != $grade_in_cagr) && $grade_in_cagr > 0) OR
+                    (($grade_in_cagr == 0) && !is_null($student->moodle_grade) && !$has_fi && $student->moodle_grade != 0))  {
+
                     $grade_in_moodle = '<span class="diff_grade">'.
                                        $student->moodle_grade.$grade_hidden.$grade_on_cagr_hidden.
                                        '</span>';
                     $grade_in_cagr = '<span class="diff_grade">'.$grade_in_cagr.'</span>';
                     $alert = '<p class="diff_grade">'.get_string('warning_diff_grade', 'gradereport_transposicao').'</p>';
+
                 } else {
                     $grade_in_moodle = $student->moodle_grade.$grade_hidden.$grade_on_cagr_hidden;
                 }
@@ -300,7 +304,7 @@ class grade_report_transposicao extends grade_report {
                             );
 
                 if ($this->show_fi) {
-                    $row[] = $this->get_checkbox_for_fi($student->username, $current_student['frequencia'] == 'FI', $this->cannot_submit);
+                    $row[] = $this->get_checkbox_for_fi($student->username, $has_fi, $this->cannot_submit);
                 }
 
                 $row = array_merge($row, array($grade_in_cagr, $sent_date, $alert));
