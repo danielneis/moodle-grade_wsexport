@@ -261,7 +261,7 @@ class grade_report_transposicao extends grade_report {
                 list($has_mencao_i, $grade_in_cagr) = $this->get_grade_and_mencao_i($current_student);
 
                 $sent_date = '';
-                $grade_updated_on_cagr = '';
+                $alert = '';
                 $grade_on_cagr_hidden = '';
                 $usuario = strtolower($current_student['usuario']);
 
@@ -275,7 +275,7 @@ class grade_report_transposicao extends grade_report {
 
                         $this->statistics['updated_on_cagr']++;
 
-                        $grade_updated_on_cagr = get_string('grade_updated_on_cagr', 'gradereport_transposicao');
+                        $alert .= '<p>'.get_string('grade_updated_on_cagr', 'gradereport_transposicao').'</p>';
 
                         $grade_on_cagr_hidden = '<input type="hidden" name="grades_cagr['.$student->username.'] value="1"/>';
                     }
@@ -283,9 +283,19 @@ class grade_report_transposicao extends grade_report {
 
                 $grade_hidden =  '<input type="hidden" name="grades['.$student->username.']" value="'.$student->moodle_grade.'"/>';
 
+                if ($student->moodle_grade != $grade_in_cagr) {
+                    $grade_in_moodle = '<span class="diff_grade">'.
+                                       $student->moodle_grade.$grade_hidden.$grade_on_cagr_hidden.
+                                       '</span>';
+                    $grade_in_cagr = '<span class="diff_grade">'.$grade_in_cagr.'</span>';
+                    $alert = '<p class="diff_grade">'.get_string('warning_diff_grade', 'gradereport_transposicao').'</p>';
+                } else {
+                    $grade_in_moodle = $student->moodle_grade.$grade_hidden.$grade_on_cagr_hidden;
+                }
+
                 // montando a linha da tabela
                 $row = array(fullname($student),
-                             $student->moodle_grade.  $grade_hidden . $grade_on_cagr_hidden,
+                             $grade_in_moodle,
                              $this->get_checkbox_for_mencao_i($student->username, $has_mencao_i, $this->cannot_submit)
                             );
 
@@ -293,7 +303,7 @@ class grade_report_transposicao extends grade_report {
                     $row[] = $this->get_checkbox_for_fi($student->username, $current_student['frequencia'] == 'FI', $this->cannot_submit);
                 }
 
-                $row = array_merge($row, array($grade_in_cagr, $sent_date, $grade_updated_on_cagr));
+                $row = array_merge($row, array($grade_in_cagr, $sent_date, $alert));
 
                 $this->table_ok->add_data($row);
             } else {
