@@ -34,6 +34,8 @@ class grade_report_transposicao extends grade_report {
     private $using_metacourse_grades = false; // if we retrieving grades from metacourse
     private $has_metacourse = false; // if courseid belongs to a metacourse
 
+    private $data_format = "d/M/Y h:i"; // o formato da data mostrada na listagem
+
     function __construct($courseid, $gpr, $context, $page=null, $force_course_grades) {
         global $CFG, $USER;
 
@@ -267,7 +269,7 @@ class grade_report_transposicao extends grade_report {
                     $sent_date = get_string('never_sent', 'gradereport_transposicao');
                 } else {
 
-                    $sent_date = $current_student['dataAtualizacao'];
+                    $sent_date = date($this->data_format, strtotime($current_student['dataAtualizacao']));
                     if (!$this->is_grades_already_in_history() &&
                         $usuario != strtolower($this->cagr_user)) {
 
@@ -318,7 +320,7 @@ class grade_report_transposicao extends grade_report {
             if (is_null($student['nota']) && strtolower($student['usuario']) == 'cagr') {
                 $sent_date = get_string('never_sent', 'gradereport_transposicao');
             } else {
-                $sent_date = $student['dataAtualizacao'];
+                $sent_date = date($this->data_format, strtotime($student['dataAtualizacao']));
             }
 
             $row = array_merge($row, array($grade_in_cagr, $sent_date, ''));
