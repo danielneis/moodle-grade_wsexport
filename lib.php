@@ -284,8 +284,7 @@ class grade_report_transposicao extends grade_report {
 
                 $grade_hidden =  '<input type="hidden" name="grades['.$student->username.']" value="'.$student->moodle_grade.'"/>';
 
-                if ((($has_fi || $student->moodle_grade != $grade_in_cagr) && $grade_in_cagr > 0) OR
-                    (($grade_in_cagr == 0) && !is_null($student->moodle_grade) && !$has_fi && $student->moodle_grade != 0))  {
+                if ($this->grade_differ_on_cagr($has_fi, $student, $grade_in_cagr))  {
 
                     $grade_in_moodle = '<span class="diff_grade">'.
                                        $student->moodle_grade.$grade_hidden.$grade_on_cagr_hidden.
@@ -685,6 +684,11 @@ class grade_report_transposicao extends grade_report {
                  get_string('use_metacourse_grades', 'gradereport_transposicao'),
                  '</a></p>';
         }
+    }
+
+    private function grade_differ_on_cagr($has_fi, $student, $grade_in_cagr) {
+        return (($has_fi || $student->moodle_grade != $grade_in_cagr) && $grade_in_cagr > 0 && $grade_in_cagr != '-') OR
+               (($grade_in_cagr == 0) && !is_null($student->moodle_grade) && !$has_fi && $student->moodle_grade != 0);
     }
 }
 ?>
