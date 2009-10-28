@@ -41,10 +41,12 @@ class grade_report_transposicao extends grade_report {
 
         parent::grade_report($courseid, $gpr, $context, $page);
 
-        $this->show_fi = (isset($CFG->transposicao_show_fi) && $CFG->transposicao_show_fi == true);
+        $this->show_fi = (isset($CFG->grade_report_transposicao_show_fi) &&
+                          $CFG->grade_report_transposicao_show_fi == true);
+
         $this->cagr_user = $CFG->cagr->user;
 
-        if (property_exists($CFG, 'transposicao_presencial') && $CFG->transposicao_presencial == true) {
+        if (isset($CFG->grade_report_transposicao_presencial && $CFG->grade_report_transposicao_presencial == true) {
             $this->sp_cagr_params = array('send' => 11, 'history' => 12, 'logs' => 13, 'submission_range' => 14);
         } else {
             $this->sp_cagr_params = array('send' => 1, 'history' => 2, 'logs' => 3, 'submission_range' => 4);
