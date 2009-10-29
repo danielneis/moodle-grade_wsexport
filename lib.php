@@ -25,7 +25,6 @@ class grade_report_transposicao extends grade_report {
     private $send_results = array(); // um array (matricula => msg) com as msgs de erro de envio de notas
 
     private $show_fi = null; // from CFG, if must show the 'FI' column
-    private $cagr_user = null; // CFG->cagr->user
 
     private $sp_cagr_params; // an array with sp_NotasMoodle params
 
@@ -44,7 +43,9 @@ class grade_report_transposicao extends grade_report {
         $this->show_fi = (isset($CFG->grade_report_transposicao_show_fi) &&
                           $CFG->grade_report_transposicao_show_fi == true);
 
-        $this->cagr_user = get_config('sincronizacao', 'cagr_user');
+        if (!$this->sinc_config = get_config('sincronizacao')) {
+            print_error('cagr_db_not_set', 'gradereport_transposicao');
+        }
 
         if (isset($CFG->grade_report_transposicao_presencial) && $CFG->grade_report_transposicao_presencial == true) {
             $this->sp_cagr_params = array('send' => 11, 'history' => 12, 'logs' => 13, 'submission_range' => 14);
@@ -274,7 +275,7 @@ class grade_report_transposicao extends grade_report {
 
                     $sent_date = date($this->data_format, strtotime($current_student['dataAtualizacao']));
 
-                    if (!$this->is_grades_already_in_history() && $usuario != strtolower($this->cagr_user)) {
+                    if (!$this->is_grades_already_in_history() && $usuario != strtolower($this->sinc_config->cagr_user)) {
 
                         $this->statistics['updated_on_cagr']++;
 
@@ -370,14 +371,13 @@ class grade_report_transposicao extends grade_report {
 
     private function connect_to_cagr() {
 
-        if (!$config = get_config('sincronizacao')) {
-            print_error('cagr_db_not_set', 'gradereport_transposicao');
-        }
-
         $this->cagr_db = ADONewConnection('sybase');
         $this->cagr_db->charSet = 'cp850';
         sybase_set_message_handler(array($this, 'sybase_error_handler'));
-        if(!$this->cagr_db->Connect($config->cagr_host, $config->cagr_user, $config->cagr_pwd, $config->cagr_dbname)) {
+        if(!$this->cagr_db->Connect($this->sinc_config->cagr_host,
+                                    $this->sinc_config->cagr_user,
+                                    $this->sinc_config->cagr_pwd,
+                                    $this->sinc_config->cagr_dbname)) {
             print_error('cagr_connection_error', 'gradereport_transposicao');
         }
     }
@@ -424,12 +424,8 @@ class grade_report_transposicao extends grade_report {
     private function get_klass_from_actual_courseid() {
         global $CFG;
 
-        if (!property_exists($CFG, 'mid_dbname')) {
-            print_error('error_on_middleware_connection', 'gradereport_transposicao');
-        }
-
         $sql = "SELECT disciplina, turma, periodo, modalidade
-                  FROM {$CFG->mid_dbname}.ViewTurmasAtivas
+                  FROM {$this->sinc_config->tabela_turmas}
                  WHERE idCursoMoodle = {$this->courseid}";
 
         if (!$this->klass = get_record_sql($sql)) {
