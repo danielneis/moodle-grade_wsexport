@@ -44,7 +44,7 @@ class grade_report_transposicao extends grade_report {
         $this->show_fi = (isset($CFG->grade_report_transposicao_show_fi) &&
                           $CFG->grade_report_transposicao_show_fi == true);
 
-        $this->cagr_user = $CFG->cagr->user;
+        $this->cagr_user = get_config('sincronizacao', 'cagr_user');
 
         if (isset($CFG->grade_report_transposicao_presencial) && $CFG->grade_report_transposicao_presencial == true) {
             $this->sp_cagr_params = array('send' => 11, 'history' => 12, 'logs' => 13, 'submission_range' => 14);
