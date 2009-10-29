@@ -369,16 +369,15 @@ class grade_report_transposicao extends grade_report {
     }
 
     private function connect_to_cagr() {
-        global $CFG;
 
-        if (!isset($CFG->cagr)) {
+        if (!$config = get_config('sincronizacao')) {
             print_error('cagr_db_not_set', 'gradereport_transposicao');
         }
 
         $this->cagr_db = ADONewConnection('sybase');
         $this->cagr_db->charSet = 'cp850';
         sybase_set_message_handler(array($this, 'sybase_error_handler'));
-        if(!$this->cagr_db->Connect($CFG->cagr->host, $CFG->cagr->user, $CFG->cagr->pass, $CFG->cagr->base)) {
+        if(!$this->cagr_db->Connect($config->cagr_host, $config->cagr_user, $config->cagr_pwd, $config->cagr_dbname)) {
             print_error('cagr_connection_error', 'gradereport_transposicao');
         }
     }
