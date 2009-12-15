@@ -22,7 +22,7 @@ não podendo ser fracionadas aquém ou além de 0,5 (zero vírgula cinco).\" (Re
 $string['grades_updated_on_cagr'] = 'Atenção: há notas que foram digitadas diretamente no CAGR (veja a coluna \"Alertas\"). Para transpor as notas desses alunos, substituindo as existentes, é necessário marcar a opção \"sobrepor\" que encontra-se no final deste relatório.';
 $string['grade_updated_on_cagr'] = 'Nota alterada diretamente no CAGR.';
 $string['invalidusername'] = 'Para transpor as notas, o seu username precisa contar apenas números. Nenhuma nota foi transposta.';
-$string['is_metacourse_error'] = 'Este curso é um metacurso. Você deve fazer a transposição nos cursos afiliados.';
+$string['is_metacourse_error'] = 'Este é um agrupamento de turmas. Neste caso, a transposição de notas deve ser realizada nas turmas afiliadas, uma a uma.';
 $string['mention'] = 'Menção I';
 $string['modulename'] = 'Transposição de notas Moodle/CAGR';
 $string['moodle_grade'] = 'Nota Moodle';
