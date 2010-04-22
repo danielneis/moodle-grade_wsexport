@@ -1,32 +1,21 @@
 <?php
 require_once($CFG->dirroot.'/grade/report/lib.php');
 require_once($CFG->libdir.'/tablelib.php');
+require_once('cagr.php');
 
 class grade_report_transposicao extends grade_report {
 
-    private $cagr_submission_date_range = null; // intervalo de envio de notas
-    private $cagr_grades = array(); // um array com as notas vindas no CAGR
     private $klass; // um registro com disciplina, turma e periodo, vindo do middleware
-
-    // um array com os alunos vindo do moodle - inicializado em fill_table()
-    private $moodle_students = array();
-    // um array com os alunos do moodle que nao estao no cagr - inicializado em fill_ok_table()
-    private $not_in_cagr_students = array();
-
-    // se as notas já foram enviadas para o histórico
-    private $grades_in_history = null;
+    private $moodle_students = array(); // um array com os alunos vindo do moodle - inicializado em fill_table()
+    private $not_in_cagr_students = array(); // um array com os alunos do moodle que nao estao no cagr - inicializado em fill_ok_table()
 
     // um array com as contagens de alunos por problema
     private $statistics = array('not_in_cagr' => 0, 'not_in_moodle' => 0, 'ok' => 0,
                                 'grade_not_formatted' => 0, 'updated_on_cagr' => 0);
 
-    private $cagr_db = null; // conexao com o sybase
-    private $sybase_error = null; // warnings e erros do sybase
     private $send_results = array(); // um array (matricula => msg) com as msgs de erro de envio de notas
 
     private $show_fi = null; // from CFG, if must show the 'FI' column
-
-    private $sp_cagr_params; // an array with sp_NotasMoodle params
 
     private $cannot_submit = false; // if there is something preventing grades sending, set it to true
 
@@ -43,16 +32,6 @@ class grade_report_transposicao extends grade_report {
         $this->show_fi = (isset($CFG->grade_report_transposicao_show_fi) &&
                           $CFG->grade_report_transposicao_show_fi == true);
 
-        if (!$this->sinc_config = get_config('sincronizacao')) {
-            print_error('cagr_db_not_set', 'gradereport_transposicao');
-        }
-
-        if (isset($CFG->grade_report_transposicao_presencial) && $CFG->grade_report_transposicao_presencial == true) {
-            $this->sp_cagr_params = array('send' => 11, 'history' => 12, 'logs' => 13, 'submission_range' => 14);
-        } else {
-            $this->sp_cagr_params = array('send' => 1, 'history' => 2, 'logs' => 3, 'submission_range' => 4);
-        }
-
         $context = get_context_instance(CONTEXT_COURSE, $this->courseid);
         $this->moodle_students = get_role_users(get_field('role', 'id', 'shortname', 'student'), $context, false, '', 'u.firstname, u.lastname');
 
@@ -61,47 +40,19 @@ class grade_report_transposicao extends grade_report {
         if (isset($USER->send_results)) {
             unset($USER->send_results);
         }
-    }
 
-    function __destruct() {
-        if (!is_null($this->cagr_db)) {
-            $this->disconnect_from_cagr();
-        }
-    }
-    
-    function initialize_cagr_data() {
-        $this->connect_to_cagr();
         $this->get_klass_from_actual_courseid();
-        $this->get_submission_date_range();
-        $this->is_grades_already_in_history();
-        $this->get_cagr_grades();
-        return true;
+
+        $this->cagr = new TransposicaoCAGR($this->klass);
+
+        $this->submission_date_range = $this->cagr->get_submission_date_range();
+        $this->cannot_submit = $this->cagr->is_grades_already_in_history();
+        $this->cagr_grades = $this->cagr->get_grades();
     }
 
     function setup_table() {
-
-        return ($this->setup_ok_table() &&
-                $this->setup_not_in_cagr_table() &&
-                $this->setup_not_in_moodle_table());
+        return ($this->setup_ok_table() && $this->setup_not_in_cagr_table() && $this->setup_not_in_moodle_table());
     }
-
-    private function get_course_grade_item($force_course_grades = false) {
-        
-        if ($id_course_grade = get_field('course_meta', 'parent_course', 'child_course', $this->courseid)) {
-            $this->has_metacourse = true;
-            $this->using_metacourse_grades = true;
-
-            if ($force_course_grades) {
-                $this->using_metacourse_grades = false;
-                $id_course_grade = $this->courseid;
-            }
-        } else {
-            $id_course_grade = $this->courseid;
-        }
-
-        $this->course_grade_item_id = get_field('grade_items', 'id', 'itemtype', 'course', 'courseid', $id_course_grade);
-    }
-
 
     function fill_table() {
 
@@ -170,53 +121,24 @@ class grade_report_transposicao extends grade_report {
     }
 
     function send_grades($grades, $mention, $fi) {
-        global $USER;
-
-        $msgs = array();
-        foreach ($grades as $matricula => $grade) {
-
-            if (isset($mention[$matricula])) {
-                $i = "'I'";
-                $grade = 'NULL';
-            } else {
-                $i = 'NULL';
-            }
-
-            if (isset($fi[$matricula])) {
-                $f = 'FI';
-                if ($grade != 'NULL') $grade = '0';
-            } else {
-                $f = 'FS';
-            }
-
-            if ($grade == '-') {
-                $grade = "NULL";
-            }
-
-            $sql = "EXEC sp_NotasMoodle {$this->sp_cagr_params['send']},
-                    {$this->klass->periodo}, '{$this->klass->disciplina}', '{$this->klass->turma}',
-                    {$matricula}, {$grade}, {$i}, '{$f}', {$USER->username}";
-
-            $this->cagr_db->Execute($sql);
-
-            $log_info = "matricula: {$matricula}; nota: {$grade}; mencao: {$i}; frequência: {$f}";
-
-            if (!is_null($this->sybase_error)) {
-                $this->send_results[$matricula] = utf8_encode($this->sybase_error);
-                $log_info .= ' ERRO: '.$this->send_results[$matricula];
-            }
-            add_to_log($this->courseid, 'grade', 'transposicao', 'send.php', $log_info);
-        }
-        $this->send_email_with_errors();
-        $USER->send_results = $this->send_results;
+        $this->cagr->send_grades($grades, $mention, $fi);
     }
 
-    function sybase_error_handler($msgnumber, $severity, $state, $line, $text) {
-        if ($text == 'ok') {
-            $this->sybase_error = null;
+    private function get_course_grade_item($force_course_grades = false) {
+
+        if ($id_course_grade = get_field('course_meta', 'parent_course', 'child_course', $this->courseid)) {
+            $this->has_metacourse = true;
+            $this->using_metacourse_grades = true;
+
+            if ($force_course_grades) {
+                $this->using_metacourse_grades = false;
+                $id_course_grade = $this->courseid;
+            }
         } else {
-            $this->sybase_error = $text;
+            $id_course_grade = $this->courseid;
         }
+
+        $this->course_grade_item_id = get_field('grade_items', 'id', 'itemtype', 'course', 'courseid', $id_course_grade);
     }
 
     private function get_moodle_grade($st_id) {
@@ -231,6 +153,7 @@ class grade_report_transposicao extends grade_report {
     }
 
     private function fill_ok_table() {
+        global $CFG;
 
         if (!is_array($this->moodle_students)) {
             return; // nenhum estudante no moodle
@@ -260,7 +183,7 @@ class grade_report_transposicao extends grade_report {
 
                 $this->statistics['ok']++;
                 unset($this->cagr_grades[$student->username]);
-                
+
                 list($has_mencao_i, $grade_in_cagr) = $this->get_grade_and_mencao_i($current_student);
                 $has_fi = $current_student['frequencia'] == 'FI';
 
@@ -275,7 +198,8 @@ class grade_report_transposicao extends grade_report {
 
                     $sent_date = date($this->data_format, strtotime($current_student['dataAtualizacao']));
 
-                    if (!$this->is_grades_already_in_history() && $usuario != strtolower($this->sinc_config->cagr_user)) {
+                    if (!$this->cagr->is_grades_already_in_history() &&
+                        $usuario != strtolower($CFG->cagr->user)) {
 
                         $this->statistics['updated_on_cagr']++;
 
@@ -328,7 +252,7 @@ class grade_report_transposicao extends grade_report {
             $row = array($student['nome'] . ' (' . $matricula . ')',
                          '-', // the moodle grade doesn't exist
                          $this->get_checkbox_for_mencao_i(' ', $has_mencao_i, true));
-            
+
             if ($this->show_fi) {
                 $row[] = $this->get_checkbox_for_fi($matricula, $student['frequencia'] == 'FI', true);
             }
@@ -369,63 +293,17 @@ class grade_report_transposicao extends grade_report {
         }
     }
 
-    private function connect_to_cagr() {
-
-        $this->cagr_db = ADONewConnection('sybase');
-        $this->cagr_db->charSet = 'cp850';
-        sybase_set_message_handler(array($this, 'sybase_error_handler'));
-        if(!$this->cagr_db->Connect($this->sinc_config->cagr_host,
-                                    $this->sinc_config->cagr_user,
-                                    $this->sinc_config->cagr_pwd,
-                                    $this->sinc_config->cagr_dbname)) {
-            print_error('cagr_connection_error', 'gradereport_transposicao');
-        }
-    }
-
-    private function disconnect_from_cagr() {
-        $this->cagr_db->Disconnect();
-    }
-
-    private function get_cagr_grades() {
-        
-        $sql = "SELECT matricula, nome, nota, mencao, frequencia, usuario, dataAtualizacao
-                  FROM vi_moodleEspelhoMatricula
-                 WHERE periodo = {$this->klass->periodo}
-                   AND disciplina = '{$this->klass->disciplina}'
-                   AND turma = '{$this->klass->turma}'";
-
-        $this->cagr_grades = $this->cagr_db->GetAssoc($sql);
-    }
-
-    private function is_grades_already_in_history() {
-
-        if (is_null($this->grades_in_history)) {
-
-            $sql = "EXEC sp_NotasMoodle {$this->sp_cagr_params['logs']},
-                    {$this->klass->periodo}, '{$this->klass->disciplina}', '{$this->klass->turma}'";
-
-            $result = $this->cagr_db->GetArray($sql);
-
-            $found = false;
-            if (is_array($result)) {
-                foreach ($result as $h)  {
-                    if (!is_null($h['dtHistorico'])) {
-                        $found = true;
-                        $this->cannot_submit = true;
-                        break;
-                    }
-                }
-            }
-            $this->grades_in_history = $found;
-        }
-        return $this->grades_in_history;
+    private function grade_differ_on_cagr($has_fi, $student, $grade_in_cagr) {
+        return ($grade_in_cagr != '-') &&
+               (($student->moodle_grade != '-') && !$has_fi) &&
+               (($student->moodle_grade != $grade_in_cagr) && !$has_fi);
     }
 
     private function get_klass_from_actual_courseid() {
         global $CFG;
 
         $sql = "SELECT disciplina, turma, periodo, modalidade
-                  FROM {$this->sinc_config->tabela_turmas}
+                  FROM {$CFG->mid_dbname}.Turmas
                  WHERE idCursoMoodle = {$this->courseid}";
 
         if (!$this->klass = get_record_sql($sql)) {
@@ -438,8 +316,8 @@ class grade_report_transposicao extends grade_report {
     private function get_grade_and_mencao_i($st) {
 
         //inicialmente nao temos mencao i
-        $i = false; 
-        
+        $i = false;
+
         if (!is_null($st['mencao'])) {
             // se o aluno tem mencao I, entao a nota eh zero
             $grade = "I";
@@ -583,8 +461,8 @@ class grade_report_transposicao extends grade_report {
     private function about_send_dates() {
 
         $now = time();
-        $start_date = explode('/', $this->cagr_submission_date_range->dtInicial);
-        $end_date = explode('/', $this->cagr_submission_date_range->dtFinal);
+        $start_date = explode('/', $this->submission_date_range->dtInicial);
+        $end_date = explode('/', $this->submission_date_range->dtFinal);
 
         if (!(strtotime("{$start_date[1]}/{$start_date[0]}/{$start_date[2]} 00:00:00") <= $now) ||
             !($now <= strtotime("{$end_date[1]}/{$end_date[0]}/{$end_date[2]} 23:59:59"))) {
@@ -592,7 +470,7 @@ class grade_report_transposicao extends grade_report {
             $this->cannot_submit = true;
         }
 
-        $period = $this->cagr_submission_date_range->periodo;
+        $period = $this->submission_date_range->periodo;
         if ($this->klass->periodo != $period) {
             return 'send_date_not_in_period';
             $this->cannot_submit = true;
@@ -614,22 +492,6 @@ class grade_report_transposicao extends grade_report {
 
     }
 
-    private function get_submission_date_range() {
-        $sql = "EXEC sp_NotasMoodle {$this->sp_cagr_params['submission_range']}";
-        $date_range = $this->cagr_db->GetArray($sql);
-        $date_range = $date_range[0];
-
-        $this->cagr_submission_date_range = new stdclass();
-        $this->cagr_submission_date_range->periodo   = $date_range['periodo'];
-        $this->cagr_submission_date_range->dtInicial = $date_range['dtInicial'];
-        $this->cagr_submission_date_range->dtFinal   = $date_range['dtFinal'];
-        
-        $p = (string) $date_range['periodo'];// just eye candy 
-        $p[5] = $p[4];
-        $p[4] = "/";
-        $this->cagr_submission_date_range->periodo_with_slash = $p;
-    }
-
     private function msg_grade_not_formatted() {
         if ($this->statistics['grade_not_formatted'] > 0) {
             echo '<p class="warning prevent">',
@@ -639,7 +501,7 @@ class grade_report_transposicao extends grade_report {
     }
 
     private function msg_grade_already_in_history() {
-        if ($this->is_grades_already_in_history()) {
+        if ($this->cagr->is_grades_already_in_history()) {
             echo '<p class="warning prevent">',
                  get_string('grades_already_in_history', 'gradereport_transposicao'),
                  '</p>';
@@ -662,7 +524,7 @@ class grade_report_transposicao extends grade_report {
             $this->cannot_submit = true;
         }
         echo '<p class="grade_range', $class, '">',
-             get_string($about, 'gradereport_transposicao', $this->cagr_submission_date_range),
+             get_string($about, 'gradereport_transposicao', $this->submission_date_range),
              '</p>';
     }
 
@@ -681,12 +543,6 @@ class grade_report_transposicao extends grade_report {
                  get_string('use_metacourse_grades', 'gradereport_transposicao'),
                  '</a></p>';
         }
-    }
-
-    private function grade_differ_on_cagr($has_fi, $student, $grade_in_cagr) {
-        return ($grade_in_cagr != '-') &&
-               (($student->moodle_grade != '-') && !$has_fi) &&
-               (($student->moodle_grade != $grade_in_cagr) && !$has_fi);
     }
 }
 ?>

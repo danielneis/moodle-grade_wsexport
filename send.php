@@ -35,11 +35,7 @@ $gpr = new grade_plugin_return(array('type'=>'report', 'plugin'=>'grader', 'cour
 // Initialise the grader report object
 $report = new grade_report_transposicao($courseid, $gpr, $context);
 
-if ($report->initialize_cagr_data()) {
-    $report->send_grades($grades, $mention, $fi);
-    redirect($CFG->wwwroot.'/grade/report/transposicao/results.php?id='.$courseid);
-} else {
-    print_error("could not connect to cagr");
-}
+$report->send_grades($grades, $mention, $fi);
+redirect($CFG->wwwroot.'/grade/report/transposicao/results.php?id='.$courseid);
 
 ?>

@@ -28,10 +28,12 @@ $report = new grade_report_transposicao($courseid, $gpr, $context, null, $force_
 /// Print header
 print_grade_page_head($COURSE->id, 'report', 'transposicao');
 
-if ($report->initialize_cagr_data() && $report->setup_table() && $report->fill_table()) {
+if ($report->setup_table() && $report->fill_table()) {
     echo $report->print_header(),
          $report->print_table(),
          $report->print_footer();
+} else {
+    print_error('cannot_populate_tables', 'gradereport_transposicao');
 }
 
 print_footer($course);
