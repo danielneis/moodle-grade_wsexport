@@ -15,7 +15,7 @@ $string['desc_show_fi'] = 'Se a coluna FI deve ser mostrada. Caso negativo, as n
 $string['dont_use_metacourse_grades'] = 'Clique aqui caso queira usar as notas deste curso ao invés das notas do metacurso.';
 $string['error_on_middleware_connection'] = 'Erro ao conectar ao middleware';
 $string['fi'] = 'Frequência Insuficiente';
-$string['grades_already_in_history'] = 'As notas desta turma não podem ser transpostas pois já foram incorporadas ao histórico escolar do estudante.';
+$string['grades_in_history'] = 'As notas desta turma não podem ser transpostas pois já foram incorporadas ao histórico escolar do estudante.';
 $string['grades_not_formatted'] = 'Há pelo menos uma nota fora do padrão da UFSC. Isto impede o envio de notas.
 \"Todas as avaliações serão expressas através de notas graduadas de 0 (zero) a 10 (dez),
 não podendo ser fracionadas aquém ou além de 0,5 (zero vírgula cinco).\" (Resolução Nº017/CUn/97)';

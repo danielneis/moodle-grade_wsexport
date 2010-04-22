@@ -30,7 +30,7 @@ print_grade_page_head($COURSE->id, 'report', 'transposicao');
 
 if ($report->setup_table() && $report->fill_table()) {
     echo $report->print_header(),
-         $report->print_table(),
+         $report->print_tables(),
          $report->print_footer();
 } else {
     print_error('cannot_populate_tables', 'gradereport_transposicao');

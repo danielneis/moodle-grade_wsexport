@@ -2,14 +2,11 @@
 
 class TransposicaoCAGR {
 
-    private $cagr_db = null; // conexao com o sybase
+    private $db = null; // conexao com o sybase
     private $sybase_error = null; // warnings e erros do sybase
 
     private $submission_date_range = null; // intervalo de envio de notas
     private $grades = array(); // um array com as notas vindas no CAGR
-
-    // se as notas já foram enviadas para o histórico
-    private $grades_in_history = null;
 
     private $sp_params; // an array with sp_NotasMoodle params
 
@@ -26,23 +23,23 @@ class TransposicaoCAGR {
 
         $this->klass = $klass;
 
-        $this->cagr_db = ADONewConnection('sybase');
-        $this->cagr_db->charSet = 'cp850';
+        $this->db = ADONewConnection('sybase');
+        $this->db->charSet = 'cp850';
         sybase_set_message_handler(array($this, 'sybase_error_handler'));
-        if(!$this->cagr_db->Connect($CFG->cagr->host, $CFG->cagr->user, $CFG->cagr->pass, $CFG->cagr->base)) {
+        if(!$this->db->Connect($CFG->cagr->host, $CFG->cagr->user, $CFG->cagr->pass, $CFG->cagr->base)) {
             print_error('cagr_connection_error', 'gradereport_transposicao');
         }
     }
 
     function __destruct() {
-        if (!is_null($this->cagr_db)) {
-            $this->cagr_db->Disconnect();
+        if (!is_null($this->db)) {
+            $this->db->Disconnect();
         }
     }
 
     function get_submission_date_range() {
         $sql = "EXEC sp_NotasMoodle {$this->sp_params['submission_range']}";
-        $date_range = $this->cagr_db->GetArray($sql);
+        $date_range = $this->db->GetArray($sql);
 
         $range = new stdclass();
         $range->periodo   = $date_range[0]['periodo'];
@@ -66,7 +63,7 @@ class TransposicaoCAGR {
                    AND disciplina = '{$this->klass->disciplina}'
                    AND turma = '{$this->klass->turma}'";
 
-        return $this->cagr_db->GetAssoc($sql);
+        return $this->db->GetAssoc($sql);
     }
 
     function send_grades($grades, $mention, $fi) {
@@ -97,7 +94,7 @@ class TransposicaoCAGR {
                     {$this->klass->periodo}, '{$this->klass->disciplina}', '{$this->klass->turma}',
                     {$matricula}, {$grade}, {$i}, '{$f}', {$USER->username}";
 
-            $this->cagr_db->Execute($sql);
+            $this->db->Execute($sql);
 
             $log_info = "matricula: {$matricula}; nota: {$grade}; mencao: {$i}; frequência: {$f}";
 
@@ -111,28 +108,21 @@ class TransposicaoCAGR {
         $USER->send_results = $this->send_results;
     }
 
-    function is_grades_already_in_history() {
+    function is_grades_in_history() {
 
-        if (is_null($this->grades_in_history)) {
+        $sql = "EXEC sp_NotasMoodle {$this->sp_params['logs']},
+            {$this->klass->periodo}, '{$this->klass->disciplina}', '{$this->klass->turma}'";
 
-            $sql = "EXEC sp_NotasMoodle {$this->sp_params['logs']},
-                    {$this->klass->periodo}, '{$this->klass->disciplina}', '{$this->klass->turma}'";
+        $result = $this->db->GetArray($sql);
 
-            $result = $this->cagr_db->GetArray($sql);
-
-            $found = false;
-            if (is_array($result)) {
-                foreach ($result as $h)  {
-                    if (!is_null($h['dtHistorico'])) {
-                        $found = true;
-                        $this->cannot_submit = true;
-                        break;
-                    }
+        if (is_array($result)) {
+            foreach ($result as $h)  {
+                if (!is_null($h['dtHistorico'])) {
+                    return true;
                 }
             }
-            $this->grades_in_history = $found;
         }
-        return $this->grades_in_history;
+        return false;
     }
 
     function sybase_error_handler($msgnumber, $severity, $state, $line, $text) {
