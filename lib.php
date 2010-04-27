@@ -459,14 +459,14 @@ class grade_report_transposicao extends grade_report {
 
         if (!(strtotime("{$start_date[1]}/{$start_date[0]}/{$start_date[2]} 00:00:00") <= $now) ||
             !($now <= strtotime("{$end_date[1]}/{$end_date[0]}/{$end_date[2]} 23:59:59"))) {
-            return 'send_date_not_in_time';
             $this->cannot_submit = true;
+            return 'send_date_not_in_time';
         }
 
         $period = $this->submission_date_range->periodo;
         if ($this->klass->periodo != $period) {
-            return 'send_date_not_in_period';
             $this->cannot_submit = true;
+            return 'send_date_not_in_period';
         }
 
         return 'send_date_ok';
@@ -511,14 +511,9 @@ class grade_report_transposicao extends grade_report {
 
     private function msg_submission_dates() {
 
-        if ($this->info_submission_dates == 'send_date_ok') {
-            $class = '';
-        } else {
-            $class = ' warning prevent';
-            $this->cannot_submit = true;
-        }
+        $class = ($this->info_submission_dates == 'send_date_ok') ? '' : 'warning prevent';
 
-        echo '<p class="grade_range', $class, '">',
+        echo '<p class="grade_range ', $class, '">',
              get_string($this->info_submission_dates, 'gradereport_transposicao', $this->submission_date_range),
              '</p>';
     }

@@ -26,7 +26,10 @@ $gpr = new grade_plugin_return(array('type'=>'report', 'plugin'=>'grader', 'cour
 $report = new grade_report_transposicao($courseid, $gpr, $context, null, $force_course_grades);// Initialise the grader report object
 
 /// Print header
-print_grade_page_head($COURSE->id, 'report', 'transposicao');
+print_grade_page_head($COURSE->id, 'report', 'transposicao',
+                      get_string('modulename', 'gradereport_transposicao') .
+                      helpbutton('transposicao', 'Transposição', 'gradereport_transposicao', true, false, '', true));
+;
 
 if ($report->setup_table() && $report->fill_table()) {
     echo $report->print_header(),
