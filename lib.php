@@ -5,13 +5,14 @@ require_once($CFG->libdir.'/tablelib.php');
 
 class grade_report_transposicao extends grade_report {
 
-    private $klass; // um registro com disciplina, turma e periodo, vindo do middleware
+    private $klass; // um registro com disciplina, turma e periodo, vindo do middleware - inicializado em get_klass_from_actual_courseid()
     private $moodle_students = array(); // um array com os alunos vindo do moodle - inicializado em fill_table()
+    private $moodle_grades = array(); // um array com as notas dos alunos do moodle - inicializado em get_moodle_grades()
     private $not_in_cagr_students = array(); // um array com os alunos do moodle que nao estao no cagr - inicializado em fill_ok_table()
 
     // um array com as contagens de alunos por problema
     private $statistics = array('not_in_cagr' => 0, 'not_in_moodle' => 0, 'ok' => 0,
-                                'grade_not_formatted' => 0, 'updated_on_cagr' => 0);
+                                'grades_not_formatted' => 0, 'updated_on_cagr' => 0);
 
     private $send_results = array(); // um array (matricula => msg) com as msgs de erro de envio de notas
 
@@ -30,6 +31,10 @@ class grade_report_transposicao extends grade_report {
 
         parent::grade_report($courseid, $gpr, $context, $page);
 
+        if (isset($USER->send_results)) {
+            unset($USER->send_results);
+        }
+
         $this->show_fi = (isset($CFG->grade_report_transposicao_show_fi) &&
                           $CFG->grade_report_transposicao_show_fi == true);
 
@@ -37,12 +42,8 @@ class grade_report_transposicao extends grade_report {
         $this->moodle_students = get_role_users(get_field('role', 'id', 'shortname', 'student'), $context, false, '', 'u.firstname, u.lastname');
 
         $this->get_course_grade_item($force_course_grades);
-
-        if (isset($USER->send_results)) {
-            unset($USER->send_results);
-        }
-
         $this->get_klass_from_actual_courseid();
+        $this->get_moodle_grades();
 
         if ($this->klass->modalidade == 'GR') {
             require_once('cagr.php');
@@ -57,6 +58,12 @@ class grade_report_transposicao extends grade_report {
         $this->controle_academico_grades = $this->controle_academico->get_grades();
 
         $this->info_submission_dates = $this->about_submission_dates();
+
+        $this->statistics['grades_not_formatted'] = $this->controle_academico->check_grades($this->moodle_grades);
+
+        if ($this->statistics['grades_not_formatted'] > 0) {
+            $this->cannot_submit = true;
+        }
 
         if ($this->is_grades_in_history == true) {
             $this->cannot_submit = true;
@@ -78,7 +85,7 @@ class grade_report_transposicao extends grade_report {
     function print_header() {
 
         $this->msg_submission_dates();
-        $this->msg_grade_not_formatted();
+        $this->msg_grades_not_formatted();
         $this->msg_grade_in_history();
         $this->msg_grade_updated_on_cagr();
         $this->msg_using_metacourse_grades();
@@ -122,7 +129,7 @@ class grade_report_transposicao extends grade_report {
         echo '<div class="report_footer">';
 
         $this->msg_submission_dates();
-        $this->msg_grade_not_formatted();
+        $this->msg_grades_not_formatted();
         $this->msg_grade_in_history();
         $this->msg_grade_updated_on_cagr();
         $this->select_overwrite_grades();
@@ -154,14 +161,22 @@ class grade_report_transposicao extends grade_report {
         $this->course_grade_item_id = get_field('grade_items', 'id', 'itemtype', 'course', 'courseid', $id_course_grade);
     }
 
-    private function get_moodle_grade($st_id) {
-        $g = get_field('grade_grades', 'finalgrade',
-                       'itemid', $this->course_grade_item_id,
-                       'userid', $st_id);
-        if ($g != false) {
-            return $this->format_grade($g);
+    private function get_moodle_grades() {
+        $grades = get_records('grade_grades', 'itemid', $this->course_grade_item_id, 'userid', 'userid, finalgrade');
+
+        $this->moodle_grades = array();
+        if (is_array($grades)) {
+            foreach ($this->moodle_students as $st)  {
+                if (isset($grades[$st->id])) {
+                    $this->moodle_grades[$st->id] = $this->format_grade($grades[$st->id]->finalgrade);
+                } else {
+                    $this->moodle_grades[$st->id] = '-';
+                }
+            }
         } else {
-            return '-';
+            foreach ($this->moodle_students as $st)  {
+                $this->moodle_grades[$st->id] = '-';
+            }
         }
     }
 
@@ -172,23 +187,8 @@ class grade_report_transposicao extends grade_report {
             return; // nenhum estudante no moodle
         }
 
-        // um primeiro loop para pegar a nota do moodle e verificar se existe alguma fora do padrao ufsc
         foreach ($this->moodle_students as $student) {
-            $student->moodle_grade = $this->get_moodle_grade($student->id);
-            if (is_numeric($student->moodle_grade)) {
-                $decimal_value = explode('.', $student->moodle_grade);
-                $decimal_value = $decimal_value[1];
-            } else {
-                $decimal_value = 0;
-            }
-            if ( ($student->moodle_grade > 10) || (($decimal_value != 0) && ($decimal_value != 5))) {
-                $this->statistics['grade_not_formatted']++;
-                $this->cannot_submit = true;
-            }
-        }
-
-        // agora o loop que preenche a tabela
-        foreach ($this->moodle_students as $student) {
+            $student->moodle_grade = $this->moodle_grades[$student->id];
             if (isset($this->controle_academico_grades[$student->username])) {
                 // o estudante esta no cagr
 
@@ -288,9 +288,7 @@ class grade_report_transposicao extends grade_report {
         $this->statistics['not_in_cagr'] = sizeof($this->not_in_cagr_students);
         foreach ($this->not_in_cagr_students as $student) {
 
-            $moodle_grade = $this->get_moodle_grade($student->id);
-
-            $row = array(fullname($student), $moodle_grade, get_checkbox("mention[]", '', true));
+            $row = array(fullname($student), $this->moodle_grades[$student->id], get_checkbox("mention[]", '', true));
 
             if ($this->show_fi) {
                 $row[] = get_checkbox("fi[{$student->username}]", false, true);
@@ -485,10 +483,10 @@ class grade_report_transposicao extends grade_report {
 
     }
 
-    private function msg_grade_not_formatted() {
-        if ($this->statistics['grade_not_formatted'] > 0) {
+    private function msg_grades_not_formatted() {
+        if ($this->statistics['grades_not_formatted'] > 0) {
             echo '<p class="warning prevent">',
-                 get_string('grades_not_formatted', 'gradereport_transposicao', $this->statistics['grade_not_formatted']),
+                 get_string('grades_not_formatted', 'gradereport_transposicao', $this->statistics['grades_not_formatted']),
                  '</p>';
         }
     }

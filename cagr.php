@@ -125,6 +125,23 @@ class TransposicaoCAGR {
         return false;
     }
 
+    function check_grades($grades) {
+
+        $grades_not_formatted = 0;
+        foreach ($grades as $userid => $grade) {
+            if (is_numeric($grade)) {
+                $decimal_value = explode('.', $grade);
+                $decimal_value = $decimal_value[1];
+            } else {
+                $decimal_value = 0;
+            }
+            if ( ($grade > 10) || (($decimal_value != 0) && ($decimal_value != 5))) {
+                $grades_not_formatted++;
+            }
+        }
+        return $grades_not_formatted;
+    }
+
     function sybase_error_handler($msgnumber, $severity, $state, $line, $text) {
         if ($text == 'ok') {
             $this->sybase_error = null;

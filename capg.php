@@ -16,6 +16,9 @@ class TransposicaoCAPG {
 
     function send_grades() {
     }
+
+    function check_grades() {
+    }
 }
 
 ?>
