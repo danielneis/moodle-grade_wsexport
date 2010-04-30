@@ -48,8 +48,8 @@ class TransposicaoCAGR {
 
         // just eye candy
         $p = (string) $date_range[0]['periodo'];
-        $p[5] = $p[4];
-        $p[4] = "/";
+        $p = $p . $p[4];
+        $p[4] = '/';
         $range->periodo_with_slash = $p;
 
         return $range;
