@@ -16,7 +16,7 @@ class TransposicaoCAGR {
         global $CFG;
 
         if (isset($CFG->grade_report_transposicao_presencial) && $CFG->grade_report_transposicao_presencial == true) {
-            $this->sp_params = array('send' => 11, 'history' => 12, 'logs' => 13, 'submission_range' => 14);
+            $this->sp_params = array('send' => 11, 'history' => 12, 'logs' => 3, 'submission_range' => 14);
         } else {
             $this->sp_params = array('send' => 1, 'history' => 2, 'logs' => 3, 'submission_range' => 4);
         }
