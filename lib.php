@@ -12,7 +12,7 @@ class grade_report_transposicao extends grade_report {
 
     // um array com as contagens de alunos por problema
     private $statistics = array('not_in_cagr' => 0, 'not_in_moodle' => 0, 'ok' => 0,
-                                'grades_not_formatted' => 0, 'updated_on_cagr' => 0);
+                                'unformatted_grades' => 0, 'updated_on_cagr' => 0);
 
     private $send_results = array(); // um array (matricula => msg) com as msgs de erro de envio de notas
 
@@ -59,9 +59,9 @@ class grade_report_transposicao extends grade_report {
 
         $this->info_submission_dates = $this->about_submission_dates();
 
-        $this->statistics['grades_not_formatted'] = $this->controle_academico->check_grades($this->moodle_grades);
+        $this->statistics['unformatted_grades'] = $this->controle_academico->check_grades($this->moodle_grades, $this->course_grade_item);
 
-        if ($this->statistics['grades_not_formatted'] > 0) {
+        if ($this->statistics['unformatted_grades'] > 0) {
             $this->cannot_submit = true;
         }
 
@@ -85,7 +85,7 @@ class grade_report_transposicao extends grade_report {
     function print_header() {
 
         $this->msg_submission_dates();
-        $this->msg_grades_not_formatted();
+        $this->msg_unformatted_grades();
         $this->msg_grade_in_history();
         $this->msg_grade_updated_on_cagr();
         $this->msg_using_metacourse_grades();
@@ -129,7 +129,7 @@ class grade_report_transposicao extends grade_report {
         echo '<div class="report_footer">';
 
         $this->msg_submission_dates();
-        $this->msg_grades_not_formatted();
+        $this->msg_unformatted_grades();
         $this->msg_grade_in_history();
         $this->msg_grade_updated_on_cagr();
         $this->select_overwrite_grades();
@@ -158,17 +158,17 @@ class grade_report_transposicao extends grade_report {
             $id_course_grade = $this->courseid;
         }
 
-        $this->course_grade_item_id = get_field('grade_items', 'id', 'itemtype', 'course', 'courseid', $id_course_grade);
+        $this->course_grade_item = grade_item::fetch_course_item($id_course_grade);
     }
 
     private function get_moodle_grades() {
-        $grades = get_records('grade_grades', 'itemid', $this->course_grade_item_id, 'userid', 'userid, finalgrade');
+        $grades = get_records('grade_grades', 'itemid', $this->course_grade_item->id, 'userid', 'userid, finalgrade');
 
         $this->moodle_grades = array();
         if (is_array($grades)) {
             foreach ($this->moodle_students as $st)  {
                 if (isset($grades[$st->id])) {
-                    $this->moodle_grades[$st->id] = $this->format_grade($grades[$st->id]->finalgrade);
+                    $this->moodle_grades[$st->id] = $grades[$st->id]->finalgrade;
                 } else {
                     $this->moodle_grades[$st->id] = '-';
                 }
@@ -233,7 +233,10 @@ class grade_report_transposicao extends grade_report {
                     $alert = '<p class="diff_grade">'.get_string('warning_diff_grade', 'gradereport_transposicao').'</p>';
 
                 } else {
-                    $grade_in_moodle = $student->moodle_grade.$grade_hidden.$grade_on_cagr_hidden;
+                    $grade_in_moodle = grade_format_gradevalue($student->moodle_grade,
+                                                               $this->course_grade_item, true,
+                                                               $this->course_grade_item->get_displaytype(), null).
+                                       $grade_hidden.$grade_on_cagr_hidden;
                 }
 
                 // montando a linha da tabela
@@ -288,7 +291,11 @@ class grade_report_transposicao extends grade_report {
         $this->statistics['not_in_cagr'] = sizeof($this->not_in_cagr_students);
         foreach ($this->not_in_cagr_students as $student) {
 
-            $row = array(fullname($student), $this->moodle_grades[$student->id], get_checkbox("mention[]", '', true));
+            $row = array(fullname($student),
+                         grade_format_gradevalue($this->moodle_grades[$student->id],
+                                                 $this->course_grade_item, true,
+                                                 $this->course_grade_item->get_displaytype(), null),
+                         get_checkbox("mention[]", '', true));
 
             if ($this->show_fi) {
                 $row[] = get_checkbox("fi[{$student->username}]", false, true);
@@ -312,7 +319,7 @@ class grade_report_transposicao extends grade_report {
                  WHERE idCursoMoodle = {$this->courseid}";
 
         if (!$this->klass = get_record_sql($sql)) {
-            print_error('class_not_in_middleware', 'gradereport_transposicao');
+            #print_error('class_not_in_middleware', 'gradereport_transposicao');
         }
     }
 
@@ -322,24 +329,14 @@ class grade_report_transposicao extends grade_report {
         $i = false;
 
         if (!is_null($st['mencao'])) {
-            // se o aluno tem mencao I, entao a nota eh zero
-            $grade = "I";
+            $grade = "I"; // se o aluno tem mencao I, entao a nota eh zero
             $i = true;
         } else if (is_numeric($st['nota'])) {
-            // caso contrario, caso tenha nota no CAGR, ela deve ser mostrada
-            $grade = $this->format_grade($st['nota']);
+            $grade = $st['nota'];// caso contrario, caso tenha nota no CAGR, ela deve ser mostrada
         } else {
-            // caso contrario, mostramos um "traço" -
-            $grade = '-';
+            $grade = '-';// caso contrario, mostramos um "traço" -
         }
         return array($i, $grade);
-    }
-
-    private function format_grade($grade) {
-        if (!is_numeric($grade)) {
-            return $grade;
-        }
-        return sprintf("%03.1f", $grade);
     }
 
     private function send_email_with_errors() {
@@ -483,10 +480,10 @@ class grade_report_transposicao extends grade_report {
 
     }
 
-    private function msg_grades_not_formatted() {
-        if ($this->statistics['grades_not_formatted'] > 0) {
+    private function msg_unformatted_grades() {
+        if ($this->statistics['unformatted_grades'] > 0) {
             echo '<p class="warning prevent">',
-                 get_string('grades_not_formatted', 'gradereport_transposicao', $this->statistics['grades_not_formatted']),
+                 get_string('unformatted_grades', 'gradereport_transposicao', $this->statistics['unformatted_grades']),
                  '</p>';
         }
     }

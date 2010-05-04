@@ -16,9 +16,6 @@ $string['dont_use_metacourse_grades'] = 'Clique aqui caso queira usar as notas d
 $string['error_on_middleware_connection'] = 'Erro ao conectar ao middleware';
 $string['fi'] = 'Frequência Insuficiente';
 $string['grades_in_history'] = 'As notas desta turma não podem ser transpostas pois já foram incorporadas ao histórico escolar do estudante.';
-$string['grades_not_formatted'] = 'Há pelo menos uma nota fora do padrão da UFSC. Isto impede o envio de notas.
-\"Todas as avaliações serão expressas através de notas graduadas de 0 (zero) a 10 (dez),
-não podendo ser fracionadas aquém ou além de 0,5 (zero vírgula cinco).\" (Resolução Nº017/CUn/97)';
 $string['grades_updated_on_cagr'] = 'Atenção: há notas que foram digitadas diretamente no CAGR (veja a coluna \"Alertas\"). Para transpor as notas desses alunos, substituindo as existentes, é necessário marcar a opção \"sobrepor\" que encontra-se no final deste relatório.';
 $string['grade_updated_on_cagr'] = 'Nota alterada diretamente no CAGR.';
 $string['invalidusername'] = 'Para transpor as notas, o seu username precisa contar apenas números. Nenhuma nota foi transposta.';
@@ -43,6 +40,9 @@ $string['students_ok'] = 'Alunos cadastrados no AVEA e no CAGR';
 $string['submit_button'] = 'Transpor notas para o CAGR';
 $string['transposicao:send'] = 'Transpor notas para o CAGR';
 $string['transposicao:view'] = 'Visualizar notas a serem transpostas';
+$string['unformatted_grades'] = 'Há pelo menos uma nota fora do padrão da UFSC. Isto impede o envio de notas.
+\"Todas as avaliações serão expressas através de notas graduadas de 0 (zero) a 10 (dez),
+não podendo ser fracionadas aquém ou além de 0,5 (zero vírgula cinco).\" (Resolução Nº017/CUn/97)';
 $string['use_metacourse_grades'] = 'Clique aqui caso queira usar as notas do metacurso ao invés das notas deste curso.';
 $string['using_course_grades'] = 'As notas apresentadas foram trazidas deste curso.';
 $string['using_metacourse_grades'] = 'As notas apresentadas foram trazidas do metacurso.';
