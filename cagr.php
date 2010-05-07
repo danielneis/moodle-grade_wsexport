@@ -125,9 +125,9 @@ class TransposicaoCAGR {
         return false;
     }
 
-    function check_grades($grades) {
+    function check_grades($grades, $course_grade_item) {
 
-        $grades_not_formatted = 0;
+        $unformatted_grades = 0;
         foreach ($grades as $userid => $grade) {
             if (is_numeric($grade)) {
                 $decimal_value = explode('.', $grade);
@@ -136,10 +136,10 @@ class TransposicaoCAGR {
                 $decimal_value = 0;
             }
             if ( ($grade > 10) || (($decimal_value != 0) && ($decimal_value != 5))) {
-                $grades_not_formatted++;
+                $unformatted_grades++;
             }
         }
-        return $grades_not_formatted;
+        return $unformatted_grades;
     }
 
     function sybase_error_handler($msgnumber, $severity, $state, $line, $text) {
