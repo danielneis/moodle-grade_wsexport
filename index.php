@@ -7,6 +7,7 @@ require($CFG->dirroot.'/grade/report/transposicao/lib.php');
 
 $courseid = required_param('id', PARAM_INT);// course id
 $force_course_grades = optional_param('force_course_grades', 0);
+$group = optional_param('group', 0);
 
 if (!$course = get_record('course', 'id', $courseid)) {
     print_error('invalidcourseid');
@@ -23,7 +24,7 @@ if ($course->metacourse > 0) {
 grade_regrade_final_grades($courseid);//first make sure we have proper final grades
 
 $gpr = new grade_plugin_return(array('type'=>'report', 'plugin'=>'grader', 'courseid'=>$courseid));// return tracking object
-$report = new grade_report_transposicao($courseid, $gpr, $context, null, $force_course_grades);// Initialise the grader report object
+$report = new grade_report_transposicao($courseid, $gpr, $context, $force_course_grades, $group, null);// Initialise the grader report object
 
 /// Print header
 print_grade_page_head($COURSE->id, 'report', 'transposicao',
@@ -32,7 +33,8 @@ print_grade_page_head($COURSE->id, 'report', 'transposicao',
 ;
 
 if ($report->setup_table() && $report->fill_table()) {
-    echo $report->print_header(),
+    echo $report->print_group_selector(),
+         $report->print_header(),
          $report->print_tables(),
          $report->print_footer();
 } else {

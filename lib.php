@@ -26,7 +26,9 @@ class grade_report_transposicao extends grade_report {
 
     private $data_format = "d/m/Y h:i"; // o formato da data mostrada na listagem
 
-    function __construct($courseid, $gpr, $context, $page=null, $force_course_grades) {
+    private $group = null; //if not selected group
+
+    function __construct($courseid, $gpr, $context, $force_course_grades, $group=null, $page=null) {
         global $CFG, $USER;
 
         parent::grade_report($courseid, $gpr, $context, $page);
@@ -38,8 +40,10 @@ class grade_report_transposicao extends grade_report {
         $this->show_fi = (isset($CFG->grade_report_transposicao_show_fi) &&
                           $CFG->grade_report_transposicao_show_fi == true);
 
+        $this->group = $group;
+
         $context = get_context_instance(CONTEXT_COURSE, $this->courseid);
-        $this->moodle_students = get_role_users(get_field('role', 'id', 'shortname', 'student'), $context, false, '', 'u.firstname, u.lastname');
+        $this->moodle_students = get_role_users(get_field('role', 'id', 'shortname', 'student'), $context, false, '', 'u.firstname, u.lastname', null, $this->group);
 
         $this->get_course_grade_item($force_course_grades);
         $this->get_klass_from_actual_courseid();
@@ -68,6 +72,12 @@ class grade_report_transposicao extends grade_report {
         if ($this->is_grades_in_history == true) {
             $this->cannot_submit = true;
         }
+
+        $this->pbarurl = 'index.php?id='.$this->courseid;
+        if (record_exists('groups', 'courseid', $this->courseid) && $this->course->groupmode == 0) {
+            $this->course->groupmode = 2; // necessário para mostrar grupos quando o curso está configurado como 'Nenhum grupo'
+        }
+        $this->setup_groups();
     }
 
     function setup_table() {
@@ -91,6 +101,10 @@ class grade_report_transposicao extends grade_report {
         $this->msg_using_metacourse_grades();
 
         echo "<form method=\"post\" action=\"confirm.php?id={$this->courseid}\">";
+    }
+
+    function print_group_selector() {
+        echo $this->group_selector . '<br>';
     }
 
     function print_tables() {
@@ -132,10 +146,16 @@ class grade_report_transposicao extends grade_report {
         $this->msg_grades_not_formatted();
         $this->msg_grade_in_history();
         $this->msg_grade_updated_on_cagr();
-        $this->select_overwrite_grades();
 
         $str_submit_button = get_string('submit_button', 'gradereport_transposicao');
-        $dis = ($this->cannot_submit == true) ? 'disabled="disabled"' : '';
+
+        if (empty($this->group)) {
+            $this->select_overwrite_grades();
+            $dis = ($this->cannot_submit == true) ? 'disabled="disabled"' : '';
+        } else {
+            $dis = 'disabled="disabled"';
+            echo '<p class="warning prevent">', get_string('grades_selected_by_group', 'gradereport_transposicao'), '</p>';
+        }
 
         echo '<input type="submit" value="',$str_submit_button , '" ', $dis,' />', '</div></form>';
     }
@@ -257,30 +277,33 @@ class grade_report_transposicao extends grade_report {
     }
 
     private function fill_not_in_moodle_table() {
-        // by now, $this->controle_academico_grade contains just the students that are not in moodle
-        // this occurs 'cause this function is called after fill_ok_table()
-        foreach  ($this->controle_academico_grades as $matricula => $student) {
-            list($has_mencao_i, $grade_in_cagr) = $this->get_grade_and_mencao_i($student);
+        // caso a seleção seja feita por algum grupo é desconsiderado os alunos que estão no CAGR e não estão no Moodle
+        if (empty($this->group)) {
+            // by now, $this->controle_academico_grade contains just the students that are not in moodle
+            // this occurs 'cause this function is called after fill_ok_table()
+            foreach  ($this->controle_academico_grades as $matricula => $student) {
+                list($has_mencao_i, $grade_in_cagr) = $this->get_grade_and_mencao_i($student);
 
-            $row = array($student['nome'] . ' (' . $matricula . ')',
-                         '-', // the moodle grade doesn't exist
-                         get_checkbox("mention[]", $has_mencao_i, $this->cannot_submit));
+                $row = array($student['nome'] . ' (' . $matricula . ')',
+                             '-', // the moodle grade doesn't exist
+                             get_checkbox("mention[]", $has_mencao_i, $this->cannot_submit));
 
-            if ($this->show_fi) {
-                $row[] = get_checkbox("fi[{$matricula}]", $student['frequencia'] == 'FI', true);
+                if ($this->show_fi) {
+                    $row[] = get_checkbox("fi[{$matricula}]", $student['frequencia'] == 'FI', true);
+                }
+
+                if (is_null($student['nota']) && strtolower($student['usuario']) == 'cagr') {
+                    $sent_date = get_string('never_sent', 'gradereport_transposicao');
+                } else {
+                    $sent_date = date($this->data_format, strtotime($student['dataAtualizacao']));
+                }
+
+                $row = array_merge($row, array($grade_in_cagr, $sent_date, ''));
+
+                $this->table_not_in_moodle->add_data($row);
             }
-
-            if (is_null($student['nota']) && strtolower($student['usuario']) == 'cagr') {
-                $sent_date = get_string('never_sent', 'gradereport_transposicao');
-            } else {
-                $sent_date = date($this->data_format, strtotime($student['dataAtualizacao']));
-            }
-
-            $row = array_merge($row, array($grade_in_cagr, $sent_date, ''));
-
-            $this->table_not_in_moodle->add_data($row);
+            $this->statistics['not_in_moodle'] = sizeof($this->controle_academico_grades);
         }
-        $this->statistics['not_in_moodle'] = sizeof($this->controle_academico_grades);
     }
 
     private function fill_not_in_cagr_table() {
