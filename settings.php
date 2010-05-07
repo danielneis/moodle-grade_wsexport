@@ -10,4 +10,13 @@ $settings->add(new admin_setting_configcheckbox('grade_report_transposicao_prese
                                                 get_string('desc_presencial', 'gradereport_transposicao'),
                                                 0, PARAM_INT));
 
+$scales = get_records('scale', 'courseid', 0, 'id', 'id, name');
+$scales = array_merge(array('0' => get_string('none')) ,records_to_menu($scales, 'id', 'name'));
+
+$settings->add(new admin_setting_configselect('grade_report_transposicao_escala_pg',
+                                              get_string('config_escala_pg', 'gradereport_transposicao'),
+                                              get_string('desc_escala_pg', 'gradereport_transposicao'),
+                                              0,
+                                              $scales));
+
 ?>

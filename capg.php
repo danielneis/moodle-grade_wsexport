@@ -30,9 +30,25 @@ class TransposicaoCAPG {
     }
 
     function check_grades($grades, $course_grade_item) {
+        global $CFG;
 
-        if (!in_array($course_grade_item->display, $this->valid_display_types)) {
-            return 1;
+        if ($course_grade_item->gradetype == GRADE_TYPE_VALUE) {
+
+            return !in_array($course_grade_item->display, $this->valid_display_types);
+
+        } else if ($course_grade_item->gradetype == GRADE_TYPE_SCALE)  {
+
+            if (!isset($CFG->grade_report_transposicao_escala_pg) ||
+                $CFG->grade_report_transposicao_escala_pg == 0) {
+                print_error("escala_pg_nao_definida");
+            }
+            $pg_scale = new grade_scale(array('id' => $CFG->grade_report_transposicao_escala_pg));
+            $course_scale = new grade_scale(array('id' => $course_grade_item->scaleid));
+
+            return ($pg_scale->scale != $course_scale->scale);
+
+        } else {
+            return true;
         }
     }
 }
