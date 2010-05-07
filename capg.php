@@ -6,7 +6,24 @@ class TransposicaoCAPG {
                                          GRADE_DISPLAY_TYPE_LETTER_REAL, GRADE_DISPLAY_TYPE_LETTER_PERCENTAGE,
                                          GRADE_DISPLAY_TYPE_PERCENTAGE_LETTER);
 
-    function __construct() {
+    function __construct($klass) {
+        global $CFG;
+
+        if (isset($CFG->grade_report_transposicao_presencial) && $CFG->grade_report_transposicao_presencial == true) {
+            $this->sp_params = array('send' => 11, 'history' => 2, 'logs' => 3);
+        } else {
+            $this->sp_params = array('send' => 1, 'history' => 2, 'logs' => 3);
+        }
+
+        $this->klass = $klass;
+
+        $this->db = ADONewConnection('sybase');
+        $this->db->charSet = 'cp850';
+        sybase_set_message_handler(array($this, 'sybase_error_handler'));
+        if(!$this->db->Connect($CFG->cagr->host, $CFG->cagr->user, $CFG->cagr->pass, 'capg')) {
+            print_error('cagr_connection_error', 'gradereport_transposicao');
+        }
+
     }
 
     function get_submission_date_range() {
@@ -17,12 +34,26 @@ class TransposicaoCAPG {
                               );
     }
 
+    function __destruct() {
+        if (!is_null($this->db)) {
+            $this->db->Disconnect();
+        }
+    }
+
     function is_grades_in_history() {
         return false;
     }
 
     function get_grades() {
-        return array();
+
+        $ano = substr($this->klass->periodo, 0, 4);
+        $periodo = substr($this->klass->periodo, 4, 1);
+        $sql = "EXEC sp_ConceitoMoodleCAPG {$this->sp_params['logs']}, {$ano}, {$periodo}, '{$this->klass->disciplina}'";
+        if ($a = $this->db->GetAssoc($sql)) {
+            return $a;
+        } else {
+            return array();
+        }
     }
 
     function send_grades() {
@@ -49,6 +80,14 @@ class TransposicaoCAPG {
 
         } else {
             return true;
+        }
+    }
+
+    function sybase_error_handler($msgnumber, $severity, $state, $line, $text) {
+        if ($text == 'ok') {
+            $this->sybase_error = null;
+        } else {
+            $this->sybase_error = $text;
         }
     }
 }
