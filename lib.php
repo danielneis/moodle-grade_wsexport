@@ -188,7 +188,9 @@ class grade_report_transposicao extends grade_report {
         if (is_array($grades)) {
             foreach ($this->moodle_students as $st)  {
                 if (isset($grades[$st->id])) {
-                    $this->moodle_grades[$st->id] = $grades[$st->id]->finalgrade;
+                    $this->moodle_grades[$st->id] = grade_format_gradevalue($grades[$st->id]->finalgrade,
+                                                                            $this->course_grade_item, true,
+                                                                            $this->course_grade_item->get_displaytype(), null);
                 } else {
                     $this->moodle_grades[$st->id] = '-';
                 }
@@ -253,10 +255,7 @@ class grade_report_transposicao extends grade_report {
                     $alert = '<p class="diff_grade">'.get_string('warning_diff_grade', 'gradereport_transposicao').'</p>';
 
                 } else {
-                    $grade_in_moodle = grade_format_gradevalue($student->moodle_grade,
-                                                               $this->course_grade_item, true,
-                                                               $this->course_grade_item->get_displaytype(), null).
-                                       $grade_hidden.$grade_on_cagr_hidden;
+                    $grade_in_moodle = $student->moodle_grade . $grade_hidden . $grade_on_cagr_hidden;
                 }
 
                 // montando a linha da tabela
@@ -315,9 +314,7 @@ class grade_report_transposicao extends grade_report {
         foreach ($this->not_in_cagr_students as $student) {
 
             $row = array(fullname($student),
-                         grade_format_gradevalue($this->moodle_grades[$student->id],
-                                                 $this->course_grade_item, true,
-                                                 $this->course_grade_item->get_displaytype(), null),
+                         $this->moodle_grades[$student->id],
                          get_checkbox("mention[]", '', true));
 
             if ($this->show_fi) {
