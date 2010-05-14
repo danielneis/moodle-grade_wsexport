@@ -48,9 +48,11 @@ class grade_report_transposicao extends grade_report {
         if ($this->klass->modalidade == 'GR') {
             require_once('cagr.php');
             $this->controle_academico = new TransposicaoCAGR($this->klass);
-        } else {
+        } else if ($this->klass->modalidade == 'ES') {
             require_once('capg.php');
             $this->controle_academico = new TransposicaoCAPG($this->klass);
+        } else {
+            print_error('modalidade_not_gr_nor_es');
         }
 
         $this->submission_date_range     = $this->controle_academico->get_submission_date_range();
@@ -205,7 +207,7 @@ class grade_report_transposicao extends grade_report {
                 $grade_on_cagr_hidden = '';
                 $usuario = strtolower($current_student['usuario']);
 
-                if (is_null($current_student['nota'])) {
+                if (empty($current_student['nota'])) {
                     $sent_date = get_string('never_sent', 'gradereport_transposicao');
                 } else {
 
@@ -262,7 +264,9 @@ class grade_report_transposicao extends grade_report {
     private function fill_not_in_moodle_table() {
         // by now, $this->controle_academico_grade contains just the students that are not in moodle
         // this occurs 'cause this function is called after fill_ok_table()
+
         foreach  ($this->controle_academico_grades as $matricula => $student) {
+
             list($has_mencao_i, $grade_in_cagr) = $this->get_grade_and_mencao_i($student);
 
             $row = array($student['nome'] . ' (' . $matricula . ')',
@@ -273,7 +277,7 @@ class grade_report_transposicao extends grade_report {
                 $row[] = get_checkbox("fi[{$matricula}]", $student['frequencia'] == 'FI', true);
             }
 
-            if (is_null($student['nota']) && strtolower($student['usuario']) == 'cagr') {
+            if (empty($student['nota'])) {
                 $sent_date = get_string('never_sent', 'gradereport_transposicao');
             } else {
                 $sent_date = date($this->data_format, strtotime($student['dataAtualizacao']));
@@ -328,7 +332,7 @@ class grade_report_transposicao extends grade_report {
         //inicialmente nao temos mencao i
         $i = false;
 
-        if (!is_null($st['mencao'])) {
+        if (!empty($st['mencao'])) {
             $grade = "I"; // se o aluno tem mencao I, entao a nota eh zero
             $i = true;
         } else if (is_numeric($st['nota'])) {

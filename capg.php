@@ -41,19 +41,26 @@ class TransposicaoCAPG {
     }
 
     function is_grades_in_history() {
-        return false;
     }
 
     function get_grades() {
 
         $ano = substr($this->klass->periodo, 0, 4);
         $periodo = substr($this->klass->periodo, 4, 1);
-        $sql = "EXEC sp_ConceitoMoodleCAPG {$this->sp_params['logs']}, {$ano}, {$periodo}, '{$this->klass->disciplina}'";
-        if ($a = $this->db->GetAssoc($sql)) {
-            return $a;
-        } else {
-            return array();
+        $sql = "EXEC sp_ConceitoMoodleCAPG {$this->sp_params['history']}, {$ano}, {$periodo}, '{$this->klass->disciplina}'";
+        if ($result = $this->db->GetArray($sql)) {
+            $alunos = array();
+            foreach ($result as $r) {
+                $r['nota'] = $r['conceito'];
+                $r['mencao'] = '';
+                $r['frequencia'] = '';
+                $r['usuario'] = '';
+                $r['dataAtualizacao'] = '';
+                $alunos[$r['matricula']] = $r;
+            }
+            return $alunos;
         }
+        return $result;
     }
 
     function send_grades() {
