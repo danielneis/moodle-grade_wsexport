@@ -29,6 +29,10 @@ class grade_report_transposicao extends grade_report {
     function __construct($courseid, $gpr, $context, $page=null, $force_course_grades) {
         global $CFG, $USER;
 
+        if (!isset($CFG->mid_dbname)) {
+            print_error('not_configured_contact_admin');
+        }
+
         parent::grade_report($courseid, $gpr, $context, $page);
 
         if (isset($USER->send_results)) {
@@ -172,12 +176,12 @@ class grade_report_transposicao extends grade_report {
                 if (isset($grades[$st->id])) {
                     $this->moodle_grades[$st->id] = $grades[$st->id]->finalgrade;
                 } else {
-                    $this->moodle_grades[$st->id] = '-';
+                    $this->moodle_grades[$st->id] = null;
                 }
             }
-        } else {
+        } else if (is_array($this->moodle_students)) {
             foreach ($this->moodle_students as $st)  {
-                $this->moodle_grades[$st->id] = '-';
+                $this->moodle_grades[$st->id] = null;
             }
         }
     }
@@ -310,8 +314,8 @@ class grade_report_transposicao extends grade_report {
     }
 
     private function grade_differ_on_cagr($has_fi, $student, $grade_in_cagr) {
-        return ($grade_in_cagr != '-') &&
-               (($student->moodle_grade != '-') && !$has_fi) &&
+        return ($grade_in_cagr != null) &&
+               (($student->moodle_grade != null) && !$has_fi) &&
                (($student->moodle_grade != $grade_in_cagr) && !$has_fi);
     }
 
@@ -338,7 +342,7 @@ class grade_report_transposicao extends grade_report {
         } else if (is_numeric($st['nota'])) {
             $grade = $st['nota'];// caso contrario, caso tenha nota no CAGR, ela deve ser mostrada
         } else {
-            $grade = '-';// caso contrario, mostramos um "traço" -
+            $grade = null;// caso contrario, mostramos um "traço" -
         }
         return array($i, $grade);
     }

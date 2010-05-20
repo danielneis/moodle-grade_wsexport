@@ -25,7 +25,9 @@ class TransposicaoCAGR {
 
         $this->db = ADONewConnection('sybase');
         $this->db->charSet = 'cp850';
-        sybase_set_message_handler(array($this, 'sybase_error_handler'));
+        if (function_exists('sybase_set_message_handler')) {
+            sybase_set_message_handler(array($this, 'sybase_error_handler'));
+        }
         if(!$this->db->Connect($CFG->cagr->host, $CFG->cagr->user, $CFG->cagr->pass, $CFG->cagr->base)) {
             print_error('cagr_connection_error', 'gradereport_transposicao');
         }
@@ -39,7 +41,8 @@ class TransposicaoCAGR {
 
     function get_submission_date_range() {
         $sql = "EXEC sp_NotasMoodle {$this->sp_params['submission_range']}";
-        $date_range = $this->db->GetArray($sql);
+        $date_range = $this->db->Execute($sql);
+        $date_range = $date_range->GetArray();
 
         $range = new stdclass();
         $range->periodo   = $date_range[0]['periodo'];
@@ -63,7 +66,8 @@ class TransposicaoCAGR {
                    AND disciplina = '{$this->klass->disciplina}'
                    AND turma = '{$this->klass->turma}'";
 
-        return $this->db->GetAssoc($sql);
+        $result = $this->db->Execute($sql);
+        return $result->GetAssoc();
     }
 
     function send_grades($grades, $mention, $fi) {
@@ -113,7 +117,8 @@ class TransposicaoCAGR {
         $sql = "EXEC sp_NotasMoodle {$this->sp_params['logs']},
             {$this->klass->periodo}, '{$this->klass->disciplina}', '{$this->klass->turma}'";
 
-        $result = $this->db->GetArray($sql);
+        $result = $this->db->Execute($sql);
+        $result = $result->GetArray();
 
         if (is_array($result)) {
             foreach ($result as $h)  {

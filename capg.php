@@ -10,16 +10,18 @@ class TransposicaoCAPG {
         global $CFG;
 
         if (isset($CFG->grade_report_transposicao_presencial) && $CFG->grade_report_transposicao_presencial == true) {
-            $this->sp_params = array('send' => 11, 'history' => 2, 'logs' => 3);
+            $this->sp_params = array('send' => 11, 'notas_enviadas' => 2, 'logs' => 3);
         } else {
-            $this->sp_params = array('send' => 1, 'history' => 2, 'logs' => 3);
+            $this->sp_params = array('send' => 1, 'notas_enviadas' => 2, 'logs' => 3);
         }
 
         $this->klass = $klass;
 
         $this->db = ADONewConnection('sybase');
         $this->db->charSet = 'cp850';
-        sybase_set_message_handler(array($this, 'sybase_error_handler'));
+        if (function_exists('sybase_set_message_handler')) {
+            sybase_set_message_handler(array($this, 'sybase_error_handler'));
+        }
         if(!$this->db->Connect($CFG->cagr->host, $CFG->cagr->user, $CFG->cagr->pass, 'capg')) {
             print_error('cagr_connection_error', 'gradereport_transposicao');
         }
@@ -47,9 +49,20 @@ class TransposicaoCAPG {
 
         $ano = substr($this->klass->periodo, 0, 4);
         $periodo = substr($this->klass->periodo, 4, 1);
-        $sql = "EXEC sp_ConceitoMoodleCAPG {$this->sp_params['history']}, {$ano}, {$periodo}, '{$this->klass->disciplina}'";
-        if ($result = $this->db->GetArray($sql)) {
+        $sql = "EXEC sp_ConceitoMoodleCAPG {$this->sp_params['notas_enviadas']}, {$ano}, {$periodo}, '{$this->klass->disciplina}'";
+        $result = $this->db->Execute($sql);
+
+        $sql = "EXEC sp_ConceitoMoodleCAPG {$this->sp_params['logs']} , {$ano}, {$periodo}, '{$this->klass->disciplina}";
+        if ($log = $this->db->Execute($sql)) {
+            $log = $dataAtualizacao->GetArray();
+            $dataAtualizacao = $log[0]['dtMoodle'];
+        } else {
+            $dataAtualizacao = '';
+        }
+
+        if ($result = $result->GetArray($sql)) {
             $alunos = array();
+
             foreach ($result as $r) {
                 $r['nota'] = $r['conceito'];
                 $r['mencao'] = '';
