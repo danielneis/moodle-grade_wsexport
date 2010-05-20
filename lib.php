@@ -74,9 +74,6 @@ class grade_report_transposicao extends grade_report {
         }
 
         $this->pbarurl = 'index.php?id='.$this->courseid;
-        if (record_exists('groups', 'courseid', $this->courseid) && $this->course->groupmode == 0) {
-            $this->course->groupmode = 2; // necessário para mostrar grupos quando o curso está configurado como 'Nenhum grupo'
-        }
         $this->setup_groups();
     }
 
