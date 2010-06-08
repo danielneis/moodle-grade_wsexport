@@ -130,7 +130,7 @@ class TransposicaoCAGR {
         return false;
     }
 
-    function check_grades($grades, $course_grade_item) {
+    function count_unformatted_grades($grades, $course_grade_item) {
 
         $unformatted_grades = 0;
         foreach ($grades as $userid => $grade) {

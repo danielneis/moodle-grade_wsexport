@@ -80,12 +80,34 @@ class TransposicaoCAPG {
         return false;
     }
 
-    function check_grades($grades, $course_grade_item) {
+    function count_unformatted_grades($grades, $course_grade_item) {
         global $CFG;
 
         if ($course_grade_item->gradetype == GRADE_TYPE_VALUE) {
 
-            return !in_array($course_grade_item->display, $this->valid_display_types);
+            if ($course_grade_item->display == 0) {
+                // o displaytype do item não foi definido, então temos que pegar o displaytype do curso
+                $display = get_field('grade_settings', 'value', 'courseid', $course_grade_item->courseid, 'name', 'displaytype');
+            } else {
+                $display = $course_grade_item->display;
+            }
+
+            if (!in_array($display, $this->valid_display_types)) {
+                return 1;
+            }
+
+            // o item de nota (ou o curso) está usando letras
+            // devemos verificar se elas são as mesmas definidas no site
+
+            $course_letters = grade_get_letters(get_context_instance(CONTEXT_COURSE, $course_grade_item->courseid));
+
+            $site_letters = grade_get_letters(get_context_instance(CONTEXT_SYSTEM));
+
+            if (array_values($site_letters) != array_values($course_letters)) {
+                return 1;
+            }
+
+            return 0;
 
         } else if ($course_grade_item->gradetype == GRADE_TYPE_SCALE)  {
 
@@ -96,10 +118,14 @@ class TransposicaoCAPG {
             $pg_scale = new grade_scale(array('id' => $CFG->grade_report_transposicao_escala_pg));
             $course_scale = new grade_scale(array('id' => $course_grade_item->scaleid));
 
-            return ($pg_scale->scale != $course_scale->scale);
+            if ($pg_scale->scale != $course_scale->scale) {
+                return 1;
+            }
+
+            return 0;
 
         } else {
-            return true;
+            return 1;
         }
     }
 

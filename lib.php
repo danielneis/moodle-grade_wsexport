@@ -69,7 +69,7 @@ class grade_report_transposicao extends grade_report {
 
         $this->info_submission_dates = $this->about_submission_dates();
 
-        $this->statistics['unformatted_grades'] = $this->controle_academico->check_grades($this->moodle_grades, $this->course_grade_item);
+        $this->statistics['unformatted_grades'] = $this->controle_academico->count_unformatted_grades($this->moodle_grades, $this->course_grade_item);
 
         if ($this->statistics['unformatted_grades'] > 0) {
             $this->cannot_submit = true;
