@@ -6,6 +6,9 @@ class TransposicaoCAPG {
                                          GRADE_DISPLAY_TYPE_LETTER_REAL, GRADE_DISPLAY_TYPE_LETTER_PERCENTAGE,
                                          GRADE_DISPLAY_TYPE_PERCENTAGE_LETTER);
 
+    private $unformatted_status = 'ok'; // o motivo da eventual falha na in_submission_grade_range
+    private $submission_date_status = 'send_date_ok'; // o estado da data atual em relação ao intervalo de envio
+
     function __construct($klass) {
         global $CFG;
 
@@ -28,12 +31,22 @@ class TransposicaoCAPG {
 
     }
 
+    // a transposicao pode ser feitas para turmas do ano passado para frente
     function get_submission_date_range() {
+ //       return $this->klass->ano < (date('m') - 1);
         return (object) array('periodo' => 20101,
                               'dtFinal' => '05/05/2010',
                               'dtInicial' => '05/03/2010',
                               'periodo_with_slash' => '2010/1'
                               );
+    }
+
+    function submission_date_status() {
+        return 'send_date_ok';
+    }
+
+    function in_submission_date_range() {
+        return true;
     }
 
     function __destruct() {
@@ -98,9 +111,7 @@ class TransposicaoCAPG {
 
             // o item de nota (ou o curso) está usando letras
             // devemos verificar se elas são as mesmas definidas no site
-
             $course_letters = grade_get_letters(get_context_instance(CONTEXT_COURSE, $course_grade_item->courseid));
-
             $site_letters = grade_get_letters(get_context_instance(CONTEXT_SYSTEM));
 
             if (array_values($site_letters) != array_values($course_letters)) {

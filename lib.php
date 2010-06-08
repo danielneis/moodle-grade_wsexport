@@ -63,11 +63,13 @@ class grade_report_transposicao extends grade_report {
             print_error('modalidade_not_gr_nor_es');
         }
 
-        $this->submission_date_range     = $this->controle_academico->get_submission_date_range();
         $this->is_grades_in_history      = $this->controle_academico->is_grades_in_history();
         $this->controle_academico_grades = $this->controle_academico->get_grades();
 
-        $this->info_submission_dates = $this->about_submission_dates();
+        $this->in_submission_date_range  = $this->controle_academico->in_submission_date_range();
+        if (!$this->in_submission_date_range) {
+            $this->cannot_submit = true;
+        }
 
         $this->statistics['unformatted_grades'] = $this->controle_academico->count_unformatted_grades($this->moodle_grades, $this->course_grade_item);
 
@@ -469,27 +471,6 @@ class grade_report_transposicao extends grade_report {
         return array_merge($c, array('cagr_grade', 'sent_date', 'alerts'));
     }
 
-    private function about_submission_dates() {
-
-        $now = time();
-        $start_date = explode('/', $this->submission_date_range->dtInicial);
-        $end_date = explode('/', $this->submission_date_range->dtFinal);
-
-        if (!(strtotime("{$start_date[1]}/{$start_date[0]}/{$start_date[2]} 00:00:00") <= $now) ||
-            !($now <= strtotime("{$end_date[1]}/{$end_date[0]}/{$end_date[2]} 23:59:59"))) {
-            $this->cannot_submit = true;
-            return 'send_date_not_in_time';
-        }
-
-        $period = $this->submission_date_range->periodo;
-        if ($this->klass->periodo != $period) {
-            $this->cannot_submit = true;
-            return 'send_date_not_in_period';
-        }
-
-        return 'send_date_ok';
-    }
-
     private function select_overwrite_grades() {
 
         if ($this->statistics['updated_on_cagr'] > 0) {
@@ -529,11 +510,11 @@ class grade_report_transposicao extends grade_report {
 
     private function msg_submission_dates() {
 
-        $class = ($this->info_submission_dates == 'send_date_ok') ? '' : 'warning prevent';
+        $status     = $this->controle_academico->submission_date_status();
+        $date_range =  $this->controle_academico->get_submission_date_range();
+        $class = ($status == 'send_date_ok') ? '' : 'warning prevent';
 
-        echo '<p class="grade_range ', $class, '">',
-             get_string($this->info_submission_dates, 'gradereport_transposicao', $this->submission_date_range),
-             '</p>';
+        echo '<p class="grade_range ', $class, '">', get_string($status, 'gradereport_transposicao',$date_range), '</p>';
     }
 
     private function msg_using_metacourse_grades() {

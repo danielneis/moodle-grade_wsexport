@@ -5,7 +5,7 @@ class TransposicaoCAGR {
     private $db = null; // conexao com o sybase
     private $sybase_error = null; // warnings e erros do sybase
 
-    private $submission_date_range = null; // intervalo de envio de notas
+    private $submission_date_status = 'send_date_ok'; // o estado da data atual em relação ao intervalo de envio
     private $grades = array(); // um array com as notas vindas no CAGR
 
     private $sp_params; // an array with sp_NotasMoodle params
@@ -56,6 +56,37 @@ class TransposicaoCAGR {
         $range->periodo_with_slash = $p;
 
         return $range;
+    }
+
+    function in_submission_date_range() {
+
+        $range = get_submission_date_range();
+        $now   = time();
+        $start = explode('/', $range->dtInicial);
+        $end   = explode('/', $range->dtFinal);
+
+        if (!(strtotime("{$start[1]}/{$start[0]}/{$start[2]} 00:00:00") <= $now) ||
+            !($now <= strtotime("{$end[1]}/{$end[0]}/{$end[2]} 23:59:59"))) {
+
+            $this->submission_date_status = 'send_date_not_in_time';
+            return false;
+        }
+
+        $period = $range->periodo;
+        if ($this->klass->periodo != $period) {
+            $this->cannot_submit = true;
+
+            $this->submission_date_status  = 'send_date_not_in_period';
+            return false;
+        }
+
+        $this->submission_date_status = 'send_date_ok';
+
+        return true;
+    }
+
+    function submission_date_status() {
+        return $this->submit_date_status;
     }
 
     function get_grades() {
