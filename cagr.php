@@ -161,7 +161,7 @@ class TransposicaoCAGR {
         return false;
     }
 
-    function count_unformatted_grades($grades, $course_grade_item) {
+    function grades_format_status($grades, $course_grade_item) {
 
         $unformatted_grades = 0;
         foreach ($grades as $userid => $grade) {
@@ -172,10 +172,10 @@ class TransposicaoCAGR {
                 $decimal_value = 0;
             }
             if ( ($grade > 10) || (($decimal_value != 0) && ($decimal_value != 5))) {
-                $unformatted_grades++;
+                return 'unformatted_grades_cagr';
             }
         }
-        return $unformatted_grades;
+        return 'all_grades_formatted';
     }
 
     function sybase_error_handler($msgnumber, $severity, $state, $line, $text) {

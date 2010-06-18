@@ -6,7 +6,6 @@ class TransposicaoCAPG {
                                          GRADE_DISPLAY_TYPE_LETTER_REAL, GRADE_DISPLAY_TYPE_LETTER_PERCENTAGE,
                                          GRADE_DISPLAY_TYPE_PERCENTAGE_LETTER);
 
-    private $unformatted_status = 'ok'; // o motivo da eventual falha na in_submission_grade_range
     private $submission_date_status = 'send_date_ok'; // o estado da data atual em relação ao intervalo de envio
 
     function __construct($klass) {
@@ -109,7 +108,7 @@ class TransposicaoCAPG {
         return false;
     }
 
-    function count_unformatted_grades($grades, $course_grade_item) {
+    function grades_format_status($grades, $course_grade_item) {
         global $CFG;
 
         if ($course_grade_item->gradetype == GRADE_TYPE_VALUE) {
@@ -121,8 +120,9 @@ class TransposicaoCAPG {
                 $display = $course_grade_item->display;
             }
 
+            // não está utilizando letras
             if (!in_array($display, $this->valid_display_types)) {
-                return 1;
+                return 'unformatted_grades_capg_not_using_letters';
             }
 
             // o item de nota (ou o curso) está usando letras
@@ -131,10 +131,8 @@ class TransposicaoCAPG {
             $site_letters = grade_get_letters(get_context_instance(CONTEXT_SYSTEM));
 
             if (array_values($site_letters) != array_values($course_letters)) {
-                return 1;
+                return 'unformatted_grades_capg_invalid_letters';
             }
-
-            return 0;
 
         } else if ($course_grade_item->gradetype == GRADE_TYPE_SCALE)  {
 
@@ -146,14 +144,10 @@ class TransposicaoCAPG {
             $course_scale = new grade_scale(array('id' => $course_grade_item->scaleid));
 
             if ($pg_scale->scale != $course_scale->scale) {
-                return 1;
+                return 'unformatted_grades_capg_invalid_scale';
             }
-
-            return 0;
-
-        } else {
-            return 1;
         }
+        return 'all_grades_formatted';
     }
 
     function sybase_error_handler($msgnumber, $severity, $state, $line, $text) {

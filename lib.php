@@ -26,6 +26,8 @@ class grade_report_transposicao extends grade_report {
 
     private $data_format = "d/m/Y h:i"; // o formato da data mostrada na listagem
 
+    private $grades_format_status = 'all_grades_formatted'; // o estado da notas quanto à sua formatação (fracionamento, escala, letra, etc)
+
     private $group = null; //if not selected group
 
     function __construct($courseid, $gpr, $context, $force_course_grades, $group=null, $page=null) {
@@ -71,9 +73,9 @@ class grade_report_transposicao extends grade_report {
             $this->cannot_submit = true;
         }
 
-        $this->statistics['unformatted_grades'] = $this->controle_academico->count_unformatted_grades($this->moodle_grades, $this->course_grade_item);
+        $this->grades_format_status = $this->controle_academico->grades_format_status($this->moodle_grades, $this->course_grade_item);
 
-        if ($this->statistics['unformatted_grades'] > 0) {
+        if ($this->grades_format_status != 'all_grades_formatted') {
             $this->cannot_submit = true;
         }
 
@@ -483,11 +485,9 @@ class grade_report_transposicao extends grade_report {
     }
 
     private function msg_unformatted_grades() {
-        if ($this->statistics['unformatted_grades'] > 0) {
-            echo '<p class="warning prevent">',
-                 get_string('unformatted_grades', 'gradereport_transposicao', $this->statistics['unformatted_grades']),
-                 '</p>';
-        }
+        echo '<p class="warning prevent">',
+             get_string($this->grades_format_status, 'gradereport_transposicao'),
+             '</p>';
     }
 
     private function msg_grade_in_history() {
@@ -510,7 +510,11 @@ class grade_report_transposicao extends grade_report {
 
         $status     = $this->controle_academico->submission_date_status();
         $date_range =  $this->controle_academico->get_submission_date_range();
-        $class = ($status == 'send_date_ok') ? '' : 'warning prevent';
+        $class = '';
+        if (($status != 'send_date_ok_cagr') &&
+            ($status != 'send_date_ok_capg')) {
+            $class =  'warning prevent';
+        }
 
         echo '<p class="grade_range ', $class, '">', get_string($status, 'gradereport_transposicao',$date_range), '</p>';
     }
