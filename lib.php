@@ -356,10 +356,8 @@ class grade_report_transposicao extends grade_report {
         if (!empty($st['mencao']) && $st['mencao'] != ' ') {
             $grade = "I"; // se o aluno tem mencao I, entao a nota eh zero
             $i = true;
-        } else if (is_numeric($st['nota'])) {
-            $grade = $st['nota'];// caso contrario, caso tenha nota no CAGR, ela deve ser mostrada
         } else {
-            $grade = null;// caso contrario, mostramos um "traço" -
+            $grade = $st['nota'];
         }
         return array($i, $grade);
     }
