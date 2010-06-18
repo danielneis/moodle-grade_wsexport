@@ -5,8 +5,8 @@ require_once($CFG->libdir.'/tablelib.php');
 
 class grade_report_transposicao extends grade_report {
 
-    private $klass; // um registro com disciplina, turma e periodo, vindo do middleware - inicializado em get_klass_from_actual_courseid()
-    private $moodle_students = array(); // um array com os alunos vindo do moodle - inicializado em fill_table()
+    private $klass; // um registro (curso, disciplina, turma, periodo) da tabela Turmas - inicializado em get_klass_from_actual_courseid()
+    private $moodle_students = array(); // um array com os alunos vindos do moodle - inicializado em fill_table()
     private $moodle_grades = array(); // um array com as notas dos alunos do moodle - inicializado em get_moodle_grades()
     private $not_in_cagr_students = array(); // um array com os alunos do moodle que nao estao no cagr - inicializado em fill_ok_table()
 
@@ -292,7 +292,7 @@ class grade_report_transposicao extends grade_report {
                 list($has_mencao_i, $grade_in_cagr) = $this->get_grade_and_mencao_i($student);
 
                 $row = array($student['nome'] . ' (' . $matricula . ')',
-                             '-', // the moodle grade doesn't exist
+                             '', // the moodle grade doesn't exist
                              get_checkbox("mention[]", $has_mencao_i, $this->cannot_submit));
 
                 if ($this->show_fi) {
@@ -339,7 +339,7 @@ class grade_report_transposicao extends grade_report {
     private function get_klass_from_actual_courseid() {
         global $CFG;
 
-        $sql = "SELECT disciplina, turma, periodo, modalidade
+        $sql = "SELECT curso, disciplina, turma, periodo, modalidade
                   FROM {$CFG->mid_dbname}.Turmas
                  WHERE idCursoMoodle = {$this->courseid}";
 
@@ -353,7 +353,7 @@ class grade_report_transposicao extends grade_report {
         //inicialmente nao temos mencao i
         $i = false;
 
-        if (!empty($st['mencao'])) {
+        if (!empty($st['mencao']) && $st['mencao'] != ' ') {
             $grade = "I"; // se o aluno tem mencao I, entao a nota eh zero
             $i = true;
         } else if (is_numeric($st['nota'])) {

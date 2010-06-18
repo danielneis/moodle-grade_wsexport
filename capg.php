@@ -62,31 +62,44 @@ class TransposicaoCAPG {
 
         $ano = substr($this->klass->periodo, 0, 4);
         $periodo = substr($this->klass->periodo, 4, 1);
+
+        /*
         $sql = "EXEC sp_ConceitoMoodleCAPG {$this->sp_params['notas_enviadas']}, {$ano}, {$periodo}, '{$this->klass->disciplina}'";
         $result = $this->db->Execute($sql);
+        */
 
-        $sql = "EXEC sp_ConceitoMoodleCAPG {$this->sp_params['logs']} , {$ano}, {$periodo}, '{$this->klass->disciplina}";
+        // ultimo envio das notas
+        $dataAtualizacao = '';
+        $sql = "EXEC sp_ConceitoMoodleCAPG {$this->sp_params['logs']} , {$ano}, {$periodo}, '{$this->klass->disciplina}'";
         if ($log = $this->db->Execute($sql)) {
-            $log = $dataAtualizacao->GetArray();
-            $dataAtualizacao = $log[0]['dtMoodle'];
-        } else {
-            $dataAtualizacao = '';
-        }
-
-        if ($result = $result->GetArray($sql)) {
-            $alunos = array();
-
-            foreach ($result as $r) {
-                $r['nota'] = $r['conceito'];
-                $r['mencao'] = '';
-                $r['frequencia'] = '';
-                $r['usuario'] = '';
-                $r['dataAtualizacao'] = '';
-                $alunos[$r['matricula']] = $r;
+            $log = $log->GetArray();
+            if (!empty($log)) {
+                $dataAtualizacao = $log[0]['dtMoodle'];
             }
-            return $alunos;
         }
-        return $result;
+
+
+        $sql = "SELECT convert(char(9),alu.nu_matric_alu) as matricula,
+                       ltrim(sel.nm_aluno_sel) as nome,
+                       cd_concei_cto as nota,
+                       '' as mencao,
+                       '' as usuario,
+                       '{$dataAtualizacao}' as dataAtualizacao,
+                       cd_frequencia_mat  as frequencia
+                  FROM capg..vi_alu alu
+                  JOIN capg..vi_mat mat
+                    ON (mat.nu_matric_alu = alu.nu_matric_alu)
+                  JOIN capg..vi_sel sel
+                    ON (sel.nu_cpf_sel = alu.nu_cpf_sel)
+                 WHERE nu_ano_per =  {$ano}
+                   AND mat.nu_period_per =  {$periodo}
+                   AND mat.cd_discip_dis = '{$this->klass->disciplina}'
+                   AND mat.cd_curso_cur = {$this->klass->curso}
+                   AND alu.cd_sitalu_sit in (1,4,10,11,13,14,15,16,12)
+                   AND (alu.en_eletro_alu is not null and alu.en_eletro_alu <> ' ')
+                   AND mat.cd_sitmat_mtd <> 22";
+
+        return $this->db->GetAssoc($sql);
     }
 
     function send_grades() {
