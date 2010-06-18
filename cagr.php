@@ -60,7 +60,7 @@ class TransposicaoCAGR {
 
     function in_submission_date_range() {
 
-        $range = get_submission_date_range();
+        $range = $this->get_submission_date_range();
         $now   = time();
         $start = explode('/', $range->dtInicial);
         $end   = explode('/', $range->dtFinal);
@@ -86,7 +86,7 @@ class TransposicaoCAGR {
     }
 
     function submission_date_status() {
-        return $this->submit_date_status;
+        return $this->submission_date_status;
     }
 
     function get_grades() {
