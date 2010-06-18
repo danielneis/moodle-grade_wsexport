@@ -80,7 +80,7 @@ class TransposicaoCAGR {
             return false;
         }
 
-        $this->submission_date_status = 'send_date_ok';
+        $this->submission_date_status = 'send_date_ok_cagr';
 
         return true;
     }

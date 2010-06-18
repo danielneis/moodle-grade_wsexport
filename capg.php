@@ -33,19 +33,22 @@ class TransposicaoCAPG {
 
     // a transposicao pode ser feitas para turmas do ano passado para frente
     function get_submission_date_range() {
- //       return $this->klass->ano < (date('m') - 1);
-        return (object) array('periodo' => 20101,
-                              'dtFinal' => '05/05/2010',
-                              'dtInicial' => '05/03/2010',
-                              'periodo_with_slash' => '2010/1'
-                              );
+        return date('Y') - 1;
     }
 
     function submission_date_status() {
-        return 'send_date_ok';
+        return $this->submission_date_status;
     }
 
     function in_submission_date_range() {
+
+        $ano = substr($this->klass->periodo, 0, 4);
+        if ($ano < $this->get_submission_date_range()) {
+            $this->submission_date_status  = 'send_date_not_in_period_capg';
+            return false;
+        }
+
+        $this->submission_date_status = 'send_date_ok_capg';
         return true;
     }
 
