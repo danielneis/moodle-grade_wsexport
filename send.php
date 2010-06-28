@@ -29,11 +29,8 @@ $context = get_context_instance(CONTEXT_COURSE, $course->id);
 
 require_capability('gradereport/transposicao:send', $context);
 
-/// return tracking object
 $gpr = new grade_plugin_return(array('type'=>'report', 'plugin'=>'grader', 'courseid'=>$courseid));
-
-// Initialise the grader report object
-$report = new grade_report_transposicao($courseid, $gpr, $context);
+$report = new grade_report_transposicao($courseid, $gpr, $context, 0, null, null);
 
 $report->send_grades($grades, $mention, $fi);
 redirect($CFG->wwwroot.'/grade/report/transposicao/results.php?id='.$courseid);

@@ -57,10 +57,10 @@ class grade_report_transposicao extends grade_report {
 
         if ($this->klass->modalidade == 'GR') {
             require_once('cagr.php');
-            $this->controle_academico = new TransposicaoCAGR($this->klass);
+            $this->controle_academico = new TransposicaoCAGR($this->klass, $this->courseid);
         } else if ($this->klass->modalidade == 'ES') {
             require_once('capg.php');
-            $this->controle_academico = new TransposicaoCAPG($this->klass);
+            $this->controle_academico = new TransposicaoCAPG($this->klass, $this->courseid);
         } else {
             print_error('modalidade_not_gr_nor_es');
         }
@@ -364,23 +364,6 @@ class grade_report_transposicao extends grade_report {
         return array($i, $grade);
     }
 
-    private function send_email_with_errors() {
-        if (!empty($this->send_results)) {
-
-            $course_name = get_field('course', 'fullname', 'id', $this->courseid);
-            $admin = get_admin();
-            $subject = 'Falha na transposicao de notas da disciplina '.$course_name;
-            $body = '';
-
-            $names = get_records_select('user', 'username IN ('.implode(',', array_keys($this->send_results)) . ')',
-                                        'firstname,lastname', 'username,firstname');
-
-            foreach ($this->send_results as $matricula => $error) {
-                $body .= "Matricula: {$matricula}; {$names[$matricula]->firstname} ; Erro: {$error}\n";
-            }
-            email_to_user($admin, $admin, $subject, $body);
-        }
-    }
 
     private function setup_not_in_cagr_table() {
 

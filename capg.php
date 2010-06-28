@@ -8,7 +8,7 @@ class TransposicaoCAPG {
 
     private $submission_date_status = 'send_date_ok'; // o estado da data atual em relação ao intervalo de envio
 
-    function __construct($klass) {
+    function __construct($klass, $courseid) {
         global $CFG;
 
         if (isset($CFG->grade_report_transposicao_presencial) && $CFG->grade_report_transposicao_presencial == true) {
@@ -18,6 +18,10 @@ class TransposicaoCAPG {
         }
 
         $this->klass = $klass;
+        $this->klass->ano = substr($this->klass->periodo, 0, 4);
+        $this->klass->periodo = substr($this->klass->periodo, 4, 1);
+
+        $this->courseid = $courseid;
 
         $this->db = ADONewConnection('sybase');
         $this->db->charSet = 'cp850';
@@ -41,8 +45,7 @@ class TransposicaoCAPG {
 
     function in_submission_date_range() {
 
-        $ano = substr($this->klass->periodo, 0, 4);
-        if ($ano < $this->get_submission_date_range()) {
+        if ($this->klass->ano < $this->get_submission_date_range()) {
             $this->submission_date_status  = 'send_date_not_in_period_capg';
             return false;
         }
@@ -62,17 +65,9 @@ class TransposicaoCAPG {
 
     function get_grades() {
 
-        $ano = substr($this->klass->periodo, 0, 4);
-        $periodo = substr($this->klass->periodo, 4, 1);
-
-        /*
-        $sql = "EXEC sp_ConceitoMoodleCAPG {$this->sp_params['notas_enviadas']}, {$ano}, {$periodo}, '{$this->klass->disciplina}'";
-        $result = $this->db->Execute($sql);
-        */
-
         // ultimo envio das notas
         $dataAtualizacao = '';
-        $sql = "EXEC sp_ConceitoMoodleCAPG {$this->sp_params['logs']} , {$ano}, {$periodo}, '{$this->klass->disciplina}'";
+        $sql = "EXEC sp_ConceitoMoodleCAPG {$this->sp_params['logs']} , {$this->klass->ano}, {$this->klass->periodo}, '{$this->klass->disciplina}'";
         if ($log = $this->db->Execute($sql)) {
             $log = $log->GetArray();
             if (!empty($log)) {
@@ -93,8 +88,8 @@ class TransposicaoCAPG {
                     ON (mat.nu_matric_alu = alu.nu_matric_alu)
                   JOIN capg..vi_sel sel
                     ON (sel.nu_cpf_sel = alu.nu_cpf_sel)
-                 WHERE nu_ano_per =  {$ano}
-                   AND mat.nu_period_per =  {$periodo}
+                 WHERE nu_ano_per =  {$this->klass->ano}
+                   AND mat.nu_period_per =  {$this->klass->periodo}
                    AND mat.cd_discip_dis = '{$this->klass->disciplina}'
                    AND mat.cd_curso_cur = {$this->klass->curso}
                    AND alu.cd_sitalu_sit in (1,4,10,11,13,14,15,16,12)
@@ -104,8 +99,41 @@ class TransposicaoCAPG {
         return $this->db->GetAssoc($sql);
     }
 
-    function send_grades() {
-        return false;
+    function send_grades($grades, $mention, $fi) {
+        global $USER;
+
+        $msgs = array();
+        $this->send_results = array();
+        foreach ($grades as $matricula => $grade) {
+
+            if (isset($fi[$matricula])) {
+                $f = 'FI';
+                if ($grade != 'NULL') $grade = '0';
+            } else {
+                $f = 'FS';
+            }
+
+            if (empty($grade)){
+                $grade = "NULL";
+            }
+
+            $sql = "EXEC sp_ConceitoMoodleCAPG {$this->sp_params['send']} ,
+                    {$this->klass->ano}, {$this->klass->periodo}, '{$this->klass->disciplina}',
+                    {$matricula}, {$grade}, '{$f}', {$USER->username}";
+
+            $result = $this->db->Execute($sql);
+
+            $log_info = "matricula: {$matricula}; nota: {$grade}; frequência: {$f}";
+
+            if (!$result) {
+                $this->send_results[$matricula] = $this->db->ErrorMsg() . "consulta: {$sql}";
+                $log_info .= ' ERRO: '.$this->send_results[$matricula];
+            }
+            var_dump($this->send_results);
+            add_to_log($this->courseid, 'grade', 'transposicao', 'send.php', $log_info);
+        }
+        $this->send_email_with_errors();
+        $USER->send_results = $this->send_results;
     }
 
     function grades_format_status($grades, $course_grade_item) {
@@ -155,6 +183,24 @@ class TransposicaoCAPG {
             $this->sybase_error = null;
         } else {
             $this->sybase_error = $text;
+        }
+    }
+
+    private function send_email_with_errors() {
+        if (!empty($this->send_results)) {
+
+            $course_name = get_field('course', 'fullname', 'id', $this->courseid);
+            $admin = get_admin();
+            $subject = 'Falha na transposicao de notas (CAPG) da disciplina '.$course_name;
+            $body = '';
+
+            $names = get_records_select('user', 'username IN ('.implode(',', array_keys($this->send_results)) . ')',
+                                        'firstname,lastname', 'username,firstname');
+
+            foreach ($this->send_results as $matricula => $error) {
+                $body .= "Matricula: {$matricula}; {$names[$matricula]->firstname} ; Erro: {$error}\n";
+            }
+            email_to_user($admin, $admin, $subject, $body);
         }
     }
 }

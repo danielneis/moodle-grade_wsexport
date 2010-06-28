@@ -12,7 +12,7 @@ class TransposicaoCAGR {
 
     private $klass; // registro (disciplina,turma,periodo,modalidade) vindo do Middleware
 
-    function __construct($klass) {
+    function __construct($klass, $courseid) {
         global $CFG;
 
         if (isset($CFG->grade_report_transposicao_presencial) && $CFG->grade_report_transposicao_presencial == true) {
@@ -22,6 +22,8 @@ class TransposicaoCAGR {
         }
 
         $this->klass = $klass;
+
+        $this->courseid = $courseid;
 
         $this->db = ADONewConnection('sybase');
         $this->db->charSet = 'cp850';
@@ -104,6 +106,7 @@ class TransposicaoCAGR {
     function send_grades($grades, $mention, $fi) {
         global $USER;
 
+        $this->send_results = array();
         $msgs = array();
         foreach ($grades as $matricula => $grade) {
 
@@ -183,6 +186,24 @@ class TransposicaoCAGR {
             $this->sybase_error = null;
         } else {
             $this->sybase_error = $text;
+        }
+    }
+
+    private function send_email_with_errors() {
+        if (!empty($this->send_results)) {
+
+            $course_name = get_field('course', 'fullname', 'id', $this->courseid);
+            $admin = get_admin();
+            $subject = 'Falha na transposicao de notas (CAGR) da disciplina '.$course_name;
+            $body = '';
+
+            $names = get_records_select('user', 'username IN ('.implode(',', array_keys($this->send_results)) . ')',
+                                        'firstname,lastname', 'username,firstname');
+
+            foreach ($this->send_results as $matricula => $error) {
+                $body .= "Matricula: {$matricula}; {$names[$matricula]->firstname} ; Erro: {$error}\n";
+            }
+            email_to_user($admin, $admin, $subject, $body);
         }
     }
 }

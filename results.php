@@ -23,10 +23,9 @@ $str_transposition = get_string('modulename', 'gradereport_transposicao');
 $navigation = grade_build_nav(__FILE__, $str_transposition, $course->id);
 
 /// Print header
-print_header_simple($str_grades.':'.$str_transposition, ':'.$str_grades, $navigation, '', '', true);
-print_grade_plugin_selector($courseid, 'report', 'transposicao');
-
-print_heading($str_transposition, 'left', 1, 'page_title');
+print_grade_page_head($COURSE->id, 'report', 'transposicao',
+                      get_string('modulename', 'gradereport_transposicao') .
+                      helpbutton('transposicao', 'Transposição', 'gradereport_transposicao', true, false, '', true));
 
 
 if (empty($USER->send_results)) {

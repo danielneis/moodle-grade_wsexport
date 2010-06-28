@@ -30,7 +30,6 @@ $report = new grade_report_transposicao($courseid, $gpr, $context, $force_course
 print_grade_page_head($COURSE->id, 'report', 'transposicao',
                       get_string('modulename', 'gradereport_transposicao') .
                       helpbutton('transposicao', 'Transposição', 'gradereport_transposicao', true, false, '', true));
-;
 
 if ($report->setup_table() && $report->fill_table()) {
     echo $report->print_group_selector(),
