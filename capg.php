@@ -1,15 +1,17 @@
 <?php
 
-class TransposicaoCAPG {
+require_once('controle_academico.php');
+
+class TransposicaoCAPG extends ControleAcademico {
 
     private $valid_display_types = array(GRADE_DISPLAY_TYPE_LETTER, GRADE_DISPLAY_TYPE_REAL_LETTER,
                                          GRADE_DISPLAY_TYPE_LETTER_REAL, GRADE_DISPLAY_TYPE_LETTER_PERCENTAGE,
                                          GRADE_DISPLAY_TYPE_PERCENTAGE_LETTER);
 
-    private $submission_date_status = 'send_date_ok'; // o estado da data atual em relação ao intervalo de envio
-
     function __construct($klass, $courseid) {
         global $CFG;
+
+        parent::__construct($klass, $courseid, 'capg');
 
         if (isset($CFG->grade_report_transposicao_presencial) && $CFG->grade_report_transposicao_presencial == true) {
             $this->sp_params = array('send' => 11, 'notas_enviadas' => 2, 'logs' => 3);
@@ -17,30 +19,13 @@ class TransposicaoCAPG {
             $this->sp_params = array('send' => 1, 'notas_enviadas' => 2, 'logs' => 3);
         }
 
-        $this->klass = $klass;
         $this->klass->ano = substr($this->klass->periodo, 0, 4);
         $this->klass->periodo = substr($this->klass->periodo, 4, 1);
-
-        $this->courseid = $courseid;
-
-        $this->db = ADONewConnection('sybase');
-        $this->db->charSet = 'cp850';
-        if (function_exists('sybase_set_message_handler')) {
-            sybase_set_message_handler(array($this, 'sybase_error_handler'));
-        }
-        if(!$this->db->Connect($CFG->cagr->host, $CFG->cagr->user, $CFG->cagr->pass, 'capg')) {
-            print_error('cagr_connection_error', 'gradereport_transposicao');
-        }
-
     }
 
     // a transposicao pode ser feitas para turmas do ano passado para frente
     function get_submission_date_range() {
         return date('Y') - 1;
-    }
-
-    function submission_date_status() {
-        return $this->submission_date_status;
     }
 
     function in_submission_date_range() {
@@ -52,12 +37,6 @@ class TransposicaoCAPG {
 
         $this->submission_date_status = 'send_date_ok_capg';
         return true;
-    }
-
-    function __destruct() {
-        if (!is_null($this->db)) {
-            $this->db->Disconnect();
-        }
     }
 
     function is_grades_in_history() {
@@ -119,7 +98,7 @@ class TransposicaoCAPG {
 
             $sql = "EXEC sp_ConceitoMoodleCAPG {$this->sp_params['send']} ,
                     {$this->klass->ano}, {$this->klass->periodo}, '{$this->klass->disciplina}',
-                    {$matricula}, {$grade}, '{$f}', {$USER->username}";
+                    {$matricula}, '{$grade}', '{$f}', {$USER->username}";
 
             $result = $this->db->Execute($sql);
 
@@ -129,7 +108,6 @@ class TransposicaoCAPG {
                 $this->send_results[$matricula] = $this->db->ErrorMsg() . "consulta: {$sql}";
                 $log_info .= ' ERRO: '.$this->send_results[$matricula];
             }
-            var_dump($this->send_results);
             add_to_log($this->courseid, 'grade', 'transposicao', 'send.php', $log_info);
         }
         $this->send_email_with_errors();
@@ -178,30 +156,8 @@ class TransposicaoCAPG {
         return 'all_grades_formatted';
     }
 
-    function sybase_error_handler($msgnumber, $severity, $state, $line, $text) {
-        if ($text == 'ok') {
-            $this->sybase_error = null;
-        } else {
-            $this->sybase_error = $text;
-        }
-    }
-
-    private function send_email_with_errors() {
-        if (!empty($this->send_results)) {
-
-            $course_name = get_field('course', 'fullname', 'id', $this->courseid);
-            $admin = get_admin();
-            $subject = 'Falha na transposicao de notas (CAPG) da disciplina '.$course_name;
-            $body = '';
-
-            $names = get_records_select('user', 'username IN ('.implode(',', array_keys($this->send_results)) . ')',
-                                        'firstname,lastname', 'username,firstname');
-
-            foreach ($this->send_results as $matricula => $error) {
-                $body .= "Matricula: {$matricula}; {$names[$matricula]->firstname} ; Erro: {$error}\n";
-            }
-            email_to_user($admin, $admin, $subject, $body);
-        }
+    function get_displaytype() {
+        return GRADE_DISPLAY_TYPE_LETTER;
     }
 }
 

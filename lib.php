@@ -53,7 +53,6 @@ class grade_report_transposicao extends grade_report {
 
         $this->get_course_grade_item($force_course_grades);
         $this->get_klass_from_actual_courseid();
-        $this->get_moodle_grades();
 
         if ($this->klass->modalidade == 'GR') {
             require_once('cagr.php');
@@ -64,6 +63,8 @@ class grade_report_transposicao extends grade_report {
         } else {
             print_error('modalidade_not_gr_nor_es');
         }
+
+        $this->get_moodle_grades();
 
         $this->is_grades_in_history      = $this->controle_academico->is_grades_in_history();
         $this->controle_academico_grades = $this->controle_academico->get_grades();
@@ -192,19 +193,25 @@ class grade_report_transposicao extends grade_report {
         $grades = get_records('grade_grades', 'itemid', $this->course_grade_item->id, 'userid', 'userid, finalgrade');
 
         $this->moodle_grades = array();
+        $this->grades_to_send = array();
         if (is_array($grades)) {
             foreach ($this->moodle_students as $st)  {
                 if (isset($grades[$st->id])) {
                     $this->moodle_grades[$st->id] = grade_format_gradevalue($grades[$st->id]->finalgrade,
                                                                             $this->course_grade_item, true,
                                                                             $this->course_grade_item->get_displaytype(), null);
+                    $this->grades_to_send[$st->id] = grade_format_gradevalue($grades[$st->id]->finalgrade,
+                                                                            $this->course_grade_item, true,
+                                                                            $this->controle_academico->get_displaytype(), null);
                 } else {
                     $this->moodle_grades[$st->id] = null;
+                    $this->grades_to_send[$st->id] = null;
                 }
             }
         } else if (is_array($this->moodle_students)) {
             foreach ($this->moodle_students as $st)  {
                 $this->moodle_grades[$st->id] = null;
+                $this->grades_to_send[$st->id] = null;
             }
         }
     }
@@ -227,8 +234,8 @@ class grade_report_transposicao extends grade_report {
                 unset($this->controle_academico_grades[$student->username]);
 
                 list($has_mencao_i, $grade_in_cagr) = $this->get_grade_and_mencao_i($current_student);
-                $has_fi = $current_student['frequencia'] == 'FI';
 
+                $has_fi = ($current_student['frequencia'] == 'FI');
                 $sent_date = '';
                 $alert = '';
                 $grade_on_cagr_hidden = '';
@@ -251,7 +258,8 @@ class grade_report_transposicao extends grade_report {
                     }
                 }
 
-                $grade_hidden =  '<input type="hidden" name="grades['.$student->username.']" value="'.$student->moodle_grade.'"/>';
+                $grade_hidden =  '<input type="hidden" name="grades['.$student->username.']" value="'.
+                $this->grades_to_send[$student->id].'"/>';
 
                 if ($this->grade_differ_on_cagr($has_fi, $student, $grade_in_cagr))  {
 

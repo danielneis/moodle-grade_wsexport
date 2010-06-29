@@ -1,43 +1,18 @@
 <?php
 
-class TransposicaoCAGR {
+require_once('controle_academico.php');
 
-    private $db = null; // conexao com o sybase
-    private $sybase_error = null; // warnings e erros do sybase
-
-    private $submission_date_status = 'send_date_ok'; // o estado da data atual em relação ao intervalo de envio
-    private $grades = array(); // um array com as notas vindas no CAGR
-
-    private $sp_params; // an array with sp_NotasMoodle params
-
-    private $klass; // registro (disciplina,turma,periodo,modalidade) vindo do Middleware
+class TransposicaoCAGR extends ControleAcademico {
 
     function __construct($klass, $courseid) {
         global $CFG;
+
+        parent::__construct($klass, $courseid, 'cagr');
 
         if (isset($CFG->grade_report_transposicao_presencial) && $CFG->grade_report_transposicao_presencial == true) {
             $this->sp_params = array('send' => 11, 'history' => 12, 'logs' => 3, 'submission_range' => 14);
         } else {
             $this->sp_params = array('send' => 1, 'history' => 2, 'logs' => 3, 'submission_range' => 4);
-        }
-
-        $this->klass = $klass;
-
-        $this->courseid = $courseid;
-
-        $this->db = ADONewConnection('sybase');
-        $this->db->charSet = 'cp850';
-        if (function_exists('sybase_set_message_handler')) {
-            sybase_set_message_handler(array($this, 'sybase_error_handler'));
-        }
-        if(!$this->db->Connect($CFG->cagr->host, $CFG->cagr->user, $CFG->cagr->pass, $CFG->cagr->base)) {
-            print_error('cagr_connection_error', 'gradereport_transposicao');
-        }
-    }
-
-    function __destruct() {
-        if (!is_null($this->db)) {
-            $this->db->Disconnect();
         }
     }
 
@@ -85,10 +60,6 @@ class TransposicaoCAGR {
         $this->submission_date_status = 'send_date_ok_cagr';
 
         return true;
-    }
-
-    function submission_date_status() {
-        return $this->submission_date_status;
     }
 
     function get_grades() {
@@ -152,14 +123,18 @@ class TransposicaoCAGR {
             {$this->klass->periodo}, '{$this->klass->disciplina}', '{$this->klass->turma}'";
 
         $result = $this->db->Execute($sql);
-        $result = $result->GetArray();
+        if ($result) {
+            $result = $result->GetArray();
 
-        if (is_array($result)) {
-            foreach ($result as $h)  {
-                if (!is_null($h['dtHistorico'])) {
-                    return true;
+            if (is_array($result)) {
+                foreach ($result as $h)  {
+                    if (!is_null($h['dtHistorico'])) {
+                        return true;
+                    }
                 }
             }
+        } else {
+            print_error($this->db->ErrorMsg());
         }
         return false;
     }
@@ -181,31 +156,10 @@ class TransposicaoCAGR {
         return 'all_grades_formatted';
     }
 
-    function sybase_error_handler($msgnumber, $severity, $state, $line, $text) {
-        if ($text == 'ok') {
-            $this->sybase_error = null;
-        } else {
-            $this->sybase_error = $text;
-        }
+    function get_displaytype() {
+        return GRADE_DISPLAY_TYPE_REAL;
     }
 
-    private function send_email_with_errors() {
-        if (!empty($this->send_results)) {
-
-            $course_name = get_field('course', 'fullname', 'id', $this->courseid);
-            $admin = get_admin();
-            $subject = 'Falha na transposicao de notas (CAGR) da disciplina '.$course_name;
-            $body = '';
-
-            $names = get_records_select('user', 'username IN ('.implode(',', array_keys($this->send_results)) . ')',
-                                        'firstname,lastname', 'username,firstname');
-
-            foreach ($this->send_results as $matricula => $error) {
-                $body .= "Matricula: {$matricula}; {$names[$matricula]->firstname} ; Erro: {$error}\n";
-            }
-            email_to_user($admin, $admin, $subject, $body);
-        }
-    }
 }
 
 ?>
