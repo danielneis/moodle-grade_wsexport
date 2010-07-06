@@ -261,7 +261,7 @@ class grade_report_transposicao extends grade_report {
                 $grade_hidden =  '<input type="hidden" name="grades['.$student->username.']" value="'.
                 $this->grades_to_send[$student->id].'"/>';
 
-                if ($this->grade_differ_on_cagr($has_fi, $student, $grade_in_cagr))  {
+                if ($this->controle_academico->grade_differ($has_fi, $this->grades_to_send[$student->id], $grade_in_cagr))  {
 
                     $grade_in_moodle = '<span class="diff_grade">'.
                                        $student->moodle_grade.$grade_hidden.$grade_on_cagr_hidden.
@@ -338,12 +338,6 @@ class grade_report_transposicao extends grade_report {
 
             $this->table_not_in_cagr->add_data(array_merge($row, array('', '', '')));
         }
-    }
-
-    private function grade_differ_on_cagr($has_fi, $student, $grade_in_cagr) {
-        return ($grade_in_cagr != null) &&
-               (($student->moodle_grade != null) && !$has_fi) &&
-               (($student->moodle_grade != $grade_in_cagr) && !$has_fi);
     }
 
     private function get_klass_from_actual_courseid() {

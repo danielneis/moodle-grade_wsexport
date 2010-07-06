@@ -48,6 +48,12 @@ class ControleAcademico {
         return $this->submission_date_status;
     }
 
+    function grade_differ($has_fi, $moodle_grade, $ca_grade) {
+        return ($ca_grade != null) &&
+               (($moodle_grade != null) && !$has_fi) &&
+               (($moodle_grade != $ca_grade) && !$has_fi);
+    }
+
     protected function send_email_with_errors() {
         if (!empty($this->send_results)) {
 

@@ -86,19 +86,21 @@ class TransposicaoCAPG extends ControleAcademico {
         foreach ($grades as $matricula => $grade) {
 
             if (isset($fi[$matricula])) {
-                $f = 'FI';
+                $f = 'I';
                 if ($grade != 'NULL') $grade = '0';
             } else {
-                $f = 'FS';
+                $f = 'S';
             }
 
             if (empty($grade)){
                 $grade = "NULL";
+            } else {
+                $grade = "'{$grade}'";
             }
 
             $sql = "EXEC sp_ConceitoMoodleCAPG {$this->sp_params['send']} ,
                     {$this->klass->ano}, {$this->klass->periodo}, '{$this->klass->disciplina}',
-                    {$matricula}, '{$grade}', '{$f}', {$USER->username}";
+                    {$matricula}, {$grade}, '{$f}', {$USER->username}";
 
             $result = $this->db->Execute($sql);
 
@@ -160,5 +162,4 @@ class TransposicaoCAPG extends ControleAcademico {
         return GRADE_DISPLAY_TYPE_LETTER;
     }
 }
-
 ?>

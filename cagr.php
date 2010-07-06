@@ -159,7 +159,5 @@ class TransposicaoCAGR extends ControleAcademico {
     function get_displaytype() {
         return GRADE_DISPLAY_TYPE_REAL;
     }
-
 }
-
 ?>
