@@ -49,7 +49,8 @@ class grade_report_transposicao extends grade_report {
         $this->group = $group;
 
         $context = get_context_instance(CONTEXT_COURSE, $this->courseid);
-        $this->moodle_students = get_role_users(get_field('role', 'id', 'shortname', 'student'), $context, false, '', 'u.firstname, u.lastname', null, $this->group);
+        $this->moodle_students = get_role_users(get_field('role', 'id', 'shortname', 'student'),
+                                                $context, false, '', 'u.firstname, u.lastname', null, $this->group);
 
         $this->get_course_grade_item($force_course_grades);
         $this->get_klass_from_actual_courseid();
@@ -85,7 +86,15 @@ class grade_report_transposicao extends grade_report {
         }
 
         $this->pbarurl = 'index.php?id='.$this->courseid;
-        $this->setup_groups();
+        $this->setup_groups($group);
+    }
+
+    function setup_groups($group) {
+        parent::setup_groups();
+
+        if (empty($this->group) or is_null($this->group)) {
+            $this->cannot_submit = true;
+        }
     }
 
     function setup_table() {
@@ -107,6 +116,7 @@ class grade_report_transposicao extends grade_report {
         $this->msg_grade_in_history();
         $this->msg_grade_updated_on_cagr();
         $this->msg_using_metacourse_grades();
+        $this->msg_groups();
 
         echo "<form method=\"post\" action=\"confirm.php?id={$this->courseid}\">";
     }
@@ -154,18 +164,14 @@ class grade_report_transposicao extends grade_report {
         $this->msg_unformatted_grades();
         $this->msg_grade_in_history();
         $this->msg_grade_updated_on_cagr();
+        $this->msg_groups();
 
         $str_submit_button = get_string('submit_button', 'gradereport_transposicao');
 
-        if (empty($this->group)) {
-            $this->select_overwrite_grades();
-            $dis = ($this->cannot_submit == true) ? 'disabled="disabled"' : '';
-        } else {
-            $dis = 'disabled="disabled"';
-            echo '<p class="warning prevent">', get_string('grades_selected_by_group', 'gradereport_transposicao'), '</p>';
-        }
+        $dis = ($this->cannot_submit == true) ? 'disabled="disabled"' : '';
 
-        echo '<input type="submit" value="',$str_submit_button , '" ', $dis,' />', '</div></form>';
+        echo '<input type="submit" value="',$str_submit_button , '" ', $dis,' />',
+             '</div></form>';
     }
 
     function send_grades($grades, $mention, $fi) {
@@ -502,6 +508,12 @@ class grade_report_transposicao extends grade_report {
         }
 
         echo '<p class="grade_range ', $class, '">', get_string($status, 'gradereport_transposicao',$date_range), '</p>';
+    }
+
+    private function msg_groups() {
+        if (!empty($this->group) && !is_null($this->group)) {
+            echo '<p class="warning prevent">', get_string('grades_selected_by_group', 'gradereport_transposicao'), '</p>';
+        }
     }
 
     private function msg_using_metacourse_grades() {
