@@ -92,7 +92,7 @@ class grade_report_transposicao extends grade_report {
     function setup_groups($group) {
         parent::setup_groups();
 
-        if (empty($this->group) or is_null($this->group)) {
+        if (!empty($this->group) && !is_null($this->group)) {
             $this->cannot_submit = true;
         }
     }
