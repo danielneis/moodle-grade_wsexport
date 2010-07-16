@@ -49,7 +49,8 @@ class ControleAcademico {
     }
 
     function grade_differ($has_fi, $moodle_grade, $ca_grade) {
-        return ($ca_grade != null) &&
+        return ($ca_grade != '(I)') &&
+               ($ca_grade != null) &&
                (($moodle_grade != null) && !$has_fi) &&
                (($moodle_grade != $ca_grade) && !$has_fi);
     }

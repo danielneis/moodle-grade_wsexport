@@ -24,7 +24,7 @@ class grade_report_transposicao extends grade_report {
     private $using_metacourse_grades = false; // if we retrieving grades from metacourse
     private $has_metacourse = false; // if courseid belongs to a metacourse
 
-    private $data_format = "d/m/Y h:i"; // o formato da data mostrada na listagem
+    private $data_format = "d/m/Y H:i"; // o formato da data mostrada na listagem
 
     private $grades_format_status = 'all_grades_formatted'; // o estado da notas quanto à sua formatação (fracionamento, escala, letra, etc)
 
@@ -248,7 +248,7 @@ class grade_report_transposicao extends grade_report {
                 $grade_on_cagr_hidden = '';
                 $usuario = strtolower($current_student['usuario']);
 
-                if (empty($current_student['nota'])) {
+                if (empty($current_student['nota']) && $current_student['nota'] != 0) {
                     $sent_date = get_string('never_sent', 'gradereport_transposicao');
                 } else {
 
@@ -365,7 +365,7 @@ class grade_report_transposicao extends grade_report {
         $i = false;
 
         if (!empty($st['mencao']) && $st['mencao'] != ' ') {
-            $grade = "I"; // se o aluno tem mencao I, entao a nota eh zero
+            $grade = "(I)"; // se o aluno tem mencao I, entao a nota eh zero
             $i = true;
         } else {
             $grade = $st['nota'];
