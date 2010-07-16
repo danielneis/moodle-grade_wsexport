@@ -165,6 +165,7 @@ class grade_report_transposicao extends grade_report {
         $this->msg_grade_in_history();
         $this->msg_grade_updated_on_cagr();
         $this->msg_groups();
+        $this->select_overwrite_grades();
 
         $str_submit_button = get_string('submit_button', 'gradereport_transposicao');
 
@@ -204,10 +205,10 @@ class grade_report_transposicao extends grade_report {
             foreach ($this->moodle_students as $st)  {
                 if (isset($grades[$st->id])) {
                     $this->moodle_grades[$st->id] = grade_format_gradevalue($grades[$st->id]->finalgrade,
-                                                                            $this->course_grade_item, true,
+                                                                            $this->course_grade_item, false,
                                                                             $this->course_grade_item->get_displaytype(), null);
                     $this->grades_to_send[$st->id] = grade_format_gradevalue($grades[$st->id]->finalgrade,
-                                                                            $this->course_grade_item, true,
+                                                                            $this->course_grade_item, false,
                                                                             $this->controle_academico->get_displaytype(), null);
                 } else {
                     $this->moodle_grades[$st->id] = null;
@@ -468,7 +469,7 @@ class grade_report_transposicao extends grade_report {
 
             $dis = $this->cannot_submit == true ? 'disable="disable"' : '';
             echo '<p class="overwrite_all">',
-                 '<input type="checkbox" id="overwrite_all" name="overwrite_all" value="1"', $dis, '>',
+                 '<input type="checkbox" id="overwrite_all" name="overwrite_all" value="1"', $dis, ' />',
                  '<label for="overwrite_all">',get_string('overwrite_all_grades', 'gradereport_transposicao'), '</label>',
                  '</p>';
         }

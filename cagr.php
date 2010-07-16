@@ -97,8 +97,6 @@ class TransposicaoCAGR extends ControleAcademico {
 
             if ($grade == '-') {
                 $grade = "NULL";
-            } else {
-                $grade = str_replace(',', '.', $grade);
             }
 
             $sql = "EXEC sp_NotasMoodle {$this->sp_params['send']},
