@@ -44,23 +44,12 @@ class TransposicaoCAPG extends ControleAcademico {
 
     function get_grades() {
 
-        // ultimo envio das notas
-        $dataAtualizacao = '';
-        $sql = "EXEC sp_ConceitoMoodleCAPG {$this->sp_params['logs']} , {$this->klass->ano}, {$this->klass->periodo}, '{$this->klass->disciplina}'";
-        if ($log = $this->db->Execute($sql)) {
-            $log = $log->GetArray();
-            if (!empty($log)) {
-                $dataAtualizacao = $log[0]['dtMoodle'];
-            }
-        }
-
-
         $sql = "SELECT convert(char(9),alu.nu_matric_alu) as matricula,
                        ltrim(sel.nm_aluno_sel) as nome,
                        cd_concei_cto as nota,
                        '' as mencao,
                        '' as usuario,
-                       '{$dataAtualizacao}' as dataAtualizacao,
+                       dt_atualizacao_mat as dataAtualizacao,
                        cd_frequencia_mat  as frequencia
                   FROM capg..vi_alu alu
                   JOIN capg..vi_mat mat
