@@ -79,6 +79,7 @@ class TransposicaoCAGR extends ControleAcademico {
 
         $this->send_results = array();
         $msgs = array();
+
         foreach ($grades as $matricula => $grade) {
 
             if (isset($mention[$matricula])) {
@@ -95,7 +96,7 @@ class TransposicaoCAGR extends ControleAcademico {
                 $f = 'FS';
             }
 
-            if ($grade == '-') {
+            if (empty($grade) && $grade != '0') {
                 $grade = "NULL";
             }
 

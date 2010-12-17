@@ -248,7 +248,7 @@ class grade_report_transposicao extends grade_report {
                 $grade_on_cagr_hidden = '';
                 $usuario = strtolower($current_student['usuario']);
 
-                if (empty($current_student['nota']) && $current_student['nota'] != 0) {
+                if (empty($current_student['nota']) && $current_student['nota'] != '0') {
                     $sent_date = get_string('never_sent', 'gradereport_transposicao');
                 } else {
 
@@ -261,7 +261,7 @@ class grade_report_transposicao extends grade_report {
 
                         $alert .= '<p>'.get_string('grade_updated_on_cagr', 'gradereport_transposicao').'</p>';
 
-                        $grade_on_cagr_hidden = '<input type="hidden" name="grades_cagr['.$student->username.'] value="1"/>';
+                        $grade_on_cagr_hidden = '<input type="hidden" name="grades_cagr['.$student->username.']" value="1"/>';
                     }
                 }
 

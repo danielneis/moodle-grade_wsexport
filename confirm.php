@@ -11,11 +11,13 @@ $fi            = optional_param('fi', array());// frequencia insuficiente
 $grades_cagr   = optional_param('grades_cagr', array());// grades that was updated on cagr, hidden in form
 $overwrite_all = optional_param('overwrite_all', 0, PARAM_INT);// should overwrite grades updated directly on cagr
 
+
 if (!$course = get_record('course', 'id', $courseid)) {
     print_error('invalidcourseid');
 }
 
 require_login($course->id);
+
 
 $context = get_context_instance(CONTEXT_COURSE, $course->id);
 
@@ -33,6 +35,9 @@ if (!empty($grades_cagr)) {
         $str_notice = get_string('will_overwrite_grades', 'gradereport_transposicao');
     } else {
         // remove grades that was updated on cagr, if user did not want to overwrite
+        if ($_SERVER['REMOTE_ADDR'] == '150.162.9.40') {
+            var_dump($grades_cagr);
+        }
         $grades = array_diff_key($grades, $grades_cagr);
         $str_notice = get_string('wont_overwrite_grades', 'gradereport_transposicao');
     }
