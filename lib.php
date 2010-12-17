@@ -205,7 +205,7 @@ class grade_report_transposicao extends grade_report {
             foreach ($this->moodle_students as $st)  {
                 if (isset($grades[$st->id])) {
                     $this->moodle_grades[$st->id] = grade_format_gradevalue($grades[$st->id]->finalgrade,
-                                                                            $this->course_grade_item, false,
+                                                                            $this->course_grade_item, true,
                                                                             $this->course_grade_item->get_displaytype(), null);
                     $this->grades_to_send[$st->id] = grade_format_gradevalue($grades[$st->id]->finalgrade,
                                                                             $this->course_grade_item, false,
@@ -268,12 +268,16 @@ class grade_report_transposicao extends grade_report {
                 $grade_hidden =  '<input type="hidden" name="grades['.$student->username.']" value="'.
                 $this->grades_to_send[$student->id].'"/>';
 
+                $grade_in_cagr_formatted = str_replace('.', ',', (string)$grade_in_cagr);
+
+
                 if ($this->controle_academico->grade_differ($has_fi, $this->grades_to_send[$student->id], $grade_in_cagr))  {
+                    $grade_in_cagr = str_replace('.', ',', (string)$grade_in_cagr);
 
                     $grade_in_moodle = '<span class="diff_grade">'.
                                        $student->moodle_grade.$grade_hidden.$grade_on_cagr_hidden.
                                        '</span>';
-                    $grade_in_cagr = '<span class="diff_grade">'.$grade_in_cagr.'</span>';
+                    $grade_in_cagr = '<span class="diff_grade">'.$grade_in_cagr_formatted.'</span>';
                     $alert = '<p class="diff_grade">'.get_string('warning_diff_grade', 'gradereport_transposicao').'</p>';
 
                 } else {
@@ -290,7 +294,7 @@ class grade_report_transposicao extends grade_report {
                     $row[] = get_checkbox("fi[{$student->username}]", $has_fi, $this->cannot_submit);
                 }
 
-                $row = array_merge($row, array($grade_in_cagr, $sent_date, $alert));
+                $row = array_merge($row, array($grade_in_cagr_formatted, $sent_date, $alert));
 
                 $this->table_ok->add_data($row);
             } else {
