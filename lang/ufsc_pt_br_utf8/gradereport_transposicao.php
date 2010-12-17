@@ -25,6 +25,7 @@ $string['grade_updated_on_cagr'] = 'Nota alterada diretamente no CAGR/CAPG.';
 $string['invalidusername'] = 'Para transpor as notas, a sua identificação deve ser um número. Nenhuma nota foi transposta.';
 $string['is_metacourse_error'] = 'Este é um agrupamento de turmas. Neste caso, a transposição de notas deve ser realizada nas turmas afiliadas, uma a uma. Não é necessária nenhuma operação adicional, nem de importação de notas. Basta acessar o relatório correlato em cada uma das turmas afiliadas, sendo que há inclusive opção para selecionar as notas registradas na turma afiliada ou no agrupamento. Por padrão as notas são obtidas automaticamente do agrupamento.';
 $string['mention'] = 'Menção I';
+$stirng['modalidade_not_grad_nor_pos'] = 'A modalidade da disciplina é diferente de Graduação e Pós-Graduação';
 $string['modulename'] = 'Transposição de notas Moodle-CAGR/CAPG';
 $string['moodle_grade'] = 'Nota Moodle';
 $string['never_sent'] = 'Nunca';

@@ -58,11 +58,11 @@ class grade_report_transposicao extends grade_report {
         if ($this->klass->modalidade == 'GR') {
             require_once('cagr.php');
             $this->controle_academico = new TransposicaoCAGR($this->klass, $this->courseid);
-        } else if ($this->klass->modalidade == 'ES') {
+        } else if (in_array($this->klass->modalidade, array('ES', 'ME', 'MP', 'DO'))) {
             require_once('capg.php');
             $this->controle_academico = new TransposicaoCAPG($this->klass, $this->courseid);
         } else {
-            print_error('modalidade_not_gr_nor_es');
+            print_error('modalidade_not_grad_nor_pos');
         }
 
         $this->get_moodle_grades();
