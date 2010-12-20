@@ -62,7 +62,7 @@ class TransposicaoCAPG extends ControleAcademico {
                    AND mat.cd_curso_cur = {$this->klass->curso}
                    AND alu.cd_sitalu_sit in (1,4,10,11,13,14,15,16,12)
                    AND (alu.en_eletro_alu is not null and alu.en_eletro_alu <> ' ')
-                   AND mat.cd_sitmat_mtd <> 22";
+                   AND mat.cd_sitmat_mtd IN (1, 2)";
 
         return $this->db->GetAssoc($sql);
     }

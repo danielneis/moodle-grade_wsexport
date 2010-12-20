@@ -246,7 +246,7 @@ class grade_report_transposicao extends grade_report {
                 $sent_date = '';
                 $alert = '';
                 $grade_on_cagr_hidden = '';
-                $usuario = strtolower($current_student['usuario']);
+                $usuario = trim(strtolower($current_student['usuario']));
 
                 if (empty($current_student['nota']) && $current_student['nota'] != '0') {
                     $sent_date = get_string('never_sent', 'gradereport_transposicao');
@@ -254,8 +254,7 @@ class grade_report_transposicao extends grade_report {
 
                     $sent_date = date($this->data_format, strtotime($current_student['dataAtualizacao']));
 
-                    if (!$this->is_grades_in_history &&
-                        $usuario != strtolower($CFG->cagr->user)) {
+                    if (!$this->is_grades_in_history && !empty($usuario) && $usuario != strtolower($CFG->cagr->user)) {
 
                         $this->statistics['updated_on_cagr']++;
 
