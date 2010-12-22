@@ -35,9 +35,6 @@ if (!empty($grades_cagr)) {
         $str_notice = get_string('will_overwrite_grades', 'gradereport_transposicao');
     } else {
         // remove grades that was updated on cagr, if user did not want to overwrite
-        if ($_SERVER['REMOTE_ADDR'] == '150.162.9.40') {
-            var_dump($grades_cagr);
-        }
         $grades = array_diff_key($grades, $grades_cagr);
         $str_notice = get_string('wont_overwrite_grades', 'gradereport_transposicao');
     }
