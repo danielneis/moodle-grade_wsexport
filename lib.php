@@ -263,12 +263,14 @@ class grade_report_transposicao extends grade_report {
                         $grade_on_cagr_hidden = '<input type="hidden" name="grades_cagr['.$student->username.']" value="1"/>';
                     }
                 }
+                if (is_null($student->moodle_grade)) {
+                    $alert .='<p class="null_grade">'.get_string('warning_null_grade', 'gradereport_transposicao').'</p>';
+                    $this->grades_to_send[$student->id] = 0;
+                }
 
-                $grade_hidden =  '<input type="hidden" name="grades['.$student->username.']" value="'.
-                $this->grades_to_send[$student->id].'"/>';
+                $grade_hidden =  '<input type="hidden" name="grades['.$student->username.']" value="'.$this->grades_to_send[$student->id].'"/>';
 
                 $grade_in_cagr_formatted = str_replace('.', ',', (string)$grade_in_cagr);
-
 
                 if ($this->controle_academico->grade_differ($has_fi, $this->grades_to_send[$student->id], $grade_in_cagr))  {
                     $grade_in_cagr = str_replace('.', ',', (string)$grade_in_cagr);
@@ -277,7 +279,7 @@ class grade_report_transposicao extends grade_report {
                                        $student->moodle_grade.$grade_hidden.$grade_on_cagr_hidden.
                                        '</span>';
                     $grade_in_cagr = '<span class="diff_grade">'.$grade_in_cagr_formatted.'</span>';
-                    $alert = '<p class="diff_grade">'.get_string('warning_diff_grade', 'gradereport_transposicao').'</p>';
+                    $alert .= '<p class="diff_grade">'.get_string('warning_diff_grade', 'gradereport_transposicao').'</p>';
 
                 } else {
                     $grade_in_moodle = $student->moodle_grade . $grade_hidden . $grade_on_cagr_hidden;

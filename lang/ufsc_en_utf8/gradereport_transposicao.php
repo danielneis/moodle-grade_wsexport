@@ -56,6 +56,7 @@ $string['use_metacourse_grades'] = 'Clique aqui caso queira usar as notas do agr
 $string['using_course_grades'] = 'As notas apresentadas foram trazidas deste curso.';
 $string['using_metacourse_grades'] = 'As notas apresentadas foram trazidas do agrupamento.';
 $string['warning_diff_grade'] = 'As notas no Moodle e no CAGR/CAPG diferem';
+$string['warning_null_grade'] = 'Este(a) aluno(a) não tem nota atribuída no Moodle. Será transposta a nota 0 (zero).';
 $string['will_be_sent'] = '(Essas notas serão transpostas)';
 $string['will_overwrite_grades'] = 'Você optou por substituir as notas de todos os alunos transpostas anteriormente.';
 $string['wont_be_sent'] = ' <span class=\"wont_be_sent\">Atenção: Essas notas não serão transpostas</span>';
