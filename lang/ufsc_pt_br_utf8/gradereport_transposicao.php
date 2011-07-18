@@ -6,6 +6,7 @@ $string['all_grades_sent'] = 'Todas as notas foram transpostas para o CAGR';
 $string['all_grades_was_sent'] = 'Todas as notas foram transpostas.';
 $string['cagr_db_not_set'] = 'Parâmetros de comunicação com o CAGR/CAPG não definidos, informe o administrador.';
 $string['cagr_connection_error'] = 'Não foi possível conectar ao CAGR/CAPG.';
+$string['cagr_dates'] = 'O CAGR (sistema acadêmico da graduação) está configurado para permitir transposição de notas do período $a->periodo_with_slash, de $a->dtInicial e $a->dtFinal.';
 $string['cagr_grade'] = 'Nota CAGR/CAPG';
 $string['class_not_in_middleware'] = 'Não é possível transpor as notas desta turma.';
 $string['config_escala_pg'] = 'Escala de notas da Pós-graduação';

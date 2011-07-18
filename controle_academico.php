@@ -13,6 +13,8 @@ class ControleAcademico {
     protected $courseid; // o id do curso moodle para o qual o relatório é instanciado
     protected $submission_date_status = 'send_date_ok'; // o estado da data atual em relação ao intervalo de envio
 
+    protected $system = ''; // cagr ou capg
+
     function __construct($klass, $courseid, $database) {
         global $CFG;
 
@@ -34,6 +36,10 @@ class ControleAcademico {
         if (!is_null($this->db)) {
             $this->db->Disconnect();
         }
+    }
+
+    function get_system() {
+        return $this->system;
     }
 
     function sybase_error_handler($msgnumber, $severity, $state, $line, $text) {

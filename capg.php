@@ -21,6 +21,8 @@ class TransposicaoCAPG extends ControleAcademico {
 
         $this->klass->ano = substr($this->klass->periodo, 0, 4);
         $this->klass->periodo = substr($this->klass->periodo, 4, 1);
+
+        $this->system = 'capg';
     }
 
     // a transposicao pode ser feitas para turmas do ano passado para frente

@@ -513,7 +513,11 @@ class grade_report_transposicao extends grade_report {
             $class =  'warning prevent';
         }
 
-        echo '<p class="grade_range ', $class, '">', get_string($status, 'gradereport_transposicao',$date_range), '</p>';
+        if ($this->controle_academico->get_system() == 'capg') {
+            echo '<p class="grade_range ', $class, '">', get_string($status, 'gradereport_transposicao',$date_range), '</p>';
+        } else {
+            echo '<p class="grade_range ', $class, '">',get_string('cagr_dates', 'gradereport_transposicao', $date_range),'</p>';
+        }
     }
 
     private function msg_groups() {

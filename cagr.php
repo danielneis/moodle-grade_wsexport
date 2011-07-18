@@ -14,6 +14,8 @@ class TransposicaoCAGR extends ControleAcademico {
         } else {
             $this->sp_params = array('send' => 1, 'history' => 2, 'logs' => 3, 'submission_range' => 4);
         }
+
+        $this->system = 'cagr';
     }
 
     function get_submission_date_range() {
