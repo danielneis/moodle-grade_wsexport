@@ -62,7 +62,7 @@ class grade_report_transposicao extends grade_report {
             require_once('capg.php');
             $this->controle_academico = new TransposicaoCAPG($this->klass, $this->courseid);
         } else {
-            print_error('modalidade_not_grad_nor_pos');
+            print_error('modalidade_not_grad_nor_pos', 'gradereport_transposicao');
         }
 
         $this->get_moodle_grades();
@@ -355,12 +355,12 @@ class grade_report_transposicao extends grade_report {
     private function get_klass_from_actual_courseid() {
         global $CFG;
 
-        $sql = "SELECT curso, disciplina, turma, periodo, modalidade
-                  FROM {$CFG->mid_dbname}.Turmas
-                 WHERE idCursoMoodle = {$this->courseid}";
+        $sql = 'SELECT curso, disciplina, turma, periodo, modalidade
+                  FROM middleware.View_Geral_Turmas_OK
+                 WHERE shortname = "'.get_field('course', 'shortname', 'id', $this->courseid).'"';
 
         if (!$this->klass = get_record_sql($sql)) {
-            #print_error('class_not_in_middleware', 'gradereport_transposicao');
+            print_error('class_not_in_middleware', 'gradereport_transposicao');
         }
     }
 
