@@ -9,17 +9,13 @@ $courseid = required_param('id', PARAM_INT);// course id
 $force_course_grades = optional_param('force_course_grades', 0);
 $group = optional_param('group', 0);
 
-if (!$course = get_record('course', 'id', $courseid)) {
+if (!$course = $DB->get_record('course', array('id' => $courseid))) {
     print_error('invalidcourseid');
 }
 
 require_login($course->id);
 $context = get_context_instance(CONTEXT_COURSE, $course->id);
 require_capability('gradereport/transposicao:view', $context);
-
-if ($course->metacourse > 0) {
-    print_error('is_metacourse_error', 'gradereport_transposicao');
-}
 
 grade_regrade_final_grades($courseid);//first make sure we have proper final grades
 

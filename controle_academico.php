@@ -62,15 +62,17 @@ class ControleAcademico {
     }
 
     protected function send_email_with_errors() {
+        global $DB;
+
         if (!empty($this->send_results)) {
 
-            $course_name = get_field('course', 'fullname', 'id', $this->courseid);
+            $course_name = $DB->get_field('course', 'fullname', array('id' => $this->courseid));
             $admin = get_admin();
             $subject = 'Falha na transposicao de notas (CAGR) da disciplina '.$course_name;
             $body = '';
 
-            $names = get_records_select('user', 'username IN ('.implode(',', array_keys($this->send_results)) . ')',
-                                        'firstname,lastname', 'username,firstname');
+            $names = $DB->get_records_select('user', 'username IN ('.implode(',', array_keys($this->send_results)) . ')',
+                            null, 'firstname,lastname', 'username,firstname');
 
             foreach ($this->send_results as $matricula => $error) {
                 $body .= "Matricula: {$matricula}; {$names[$matricula]->firstname} ; Erro: {$error}\n";

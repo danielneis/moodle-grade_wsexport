@@ -31,10 +31,14 @@ class grade_report_transposicao extends grade_report {
     private $group = null; //if not selected group
 
     function __construct($courseid, $gpr, $context, $force_course_grades, $group=null, $page=null) {
-        global $CFG, $USER;
+        global $CFG, $USER, $DB;
 
         if (!isset($CFG->mid_dbname)) {
             print_error('not_configured_contact_admin');
+        }
+
+        if ($this->is_metacurso($courseid)) {
+            print_error('is_metacourse_error', 'gradereport_transposicao');
         }
 
         parent::grade_report($courseid, $gpr, $context, $page);
@@ -49,7 +53,7 @@ class grade_report_transposicao extends grade_report {
         $this->group = $group;
 
         $context = get_context_instance(CONTEXT_COURSE, $this->courseid);
-        $this->moodle_students = get_role_users(get_field('role', 'id', 'shortname', 'student'),
+        $this->moodle_students = get_role_users($DB->get_field('role', 'id', array('shortname' => 'student')),
                                                 $context, false, '', 'u.firstname, u.lastname', null, $this->group);
 
         $this->get_course_grade_item($force_course_grades);
@@ -181,7 +185,7 @@ class grade_report_transposicao extends grade_report {
 
     private function get_course_grade_item($force_course_grades = false) {
 
-        if ($id_course_grade = get_field('course_meta', 'parent_course', 'child_course', $this->courseid)) {
+        if ($id_course_grade = $this->get_parent_meta_id($this->courseid)) {
             $this->has_metacourse = true;
             $this->using_metacourse_grades = true;
 
@@ -197,17 +201,19 @@ class grade_report_transposicao extends grade_report {
     }
 
     private function get_moodle_grades() {
-        $grades = get_records('grade_grades', 'itemid', $this->course_grade_item->id, 'userid', 'userid, finalgrade');
+        global $DB;
+
+        $grades = $DB->get_records('grade_grades', array('itemid' => $this->course_grade_item->id), 'userid', 'userid, finalgrade');
 
         $this->moodle_grades = array();
         $this->grades_to_send = array();
-        if (is_array($grades)) {
+        if (!empty(($grades)) {
             foreach ($this->moodle_students as $st)  {
-                if (isset($grades[$st->id])) {
-                    $this->moodle_grades[$st->id] = grade_format_gradevalue($grades[$st->id]->finalgrade,
+                if (isset($grades->($st->id))) {
+                    $this->moodle_grades[$st->id] = grade_format_gradevalue($grades->($st->id))->finalgrade,
                                                                             $this->course_grade_item, true,
                                                                             $this->course_grade_item->get_displaytype(), null);
-                    $this->grades_to_send[$st->id] = grade_format_gradevalue($grades[$st->id]->finalgrade,
+                    $this->grades_to_send[$st->id] = grade_format_gradevalue($grades->($st->id))->finalgrade,
                                                                             $this->course_grade_item, false,
                                                                             $this->controle_academico->get_displaytype(), null);
                 } else {
@@ -215,7 +221,7 @@ class grade_report_transposicao extends grade_report {
                     $this->grades_to_send[$st->id] = null;
                 }
             }
-        } else if (is_array($this->moodle_students)) {
+        } else if (!empty($this->moodle_students)) {
             foreach ($this->moodle_students as $st)  {
                 $this->moodle_grades[$st->id] = null;
                 $this->grades_to_send[$st->id] = null;
@@ -353,13 +359,13 @@ class grade_report_transposicao extends grade_report {
     }
 
     private function get_klass_from_actual_courseid() {
-        global $CFG;
+        global $CFG, $DB;
 
         $sql = 'SELECT curso, disciplina, turma, periodo, modalidade
-                  FROM middleware.View_Geral_Turmas_OK
-                 WHERE shortname = "'.get_field('course', 'shortname', 'id', $this->courseid).'"';
+                  FROM middleware_unificado.View_Geral_Turmas_OK
+                 WHERE shortname = "'.$DB->get_field('course', 'shortname', array('id' => $this->courseid)).'"';
 
-        if (!$this->klass = get_record_sql($sql)) {
+        if (!$this->klass = $DB->get_record_sql($sql)) {
             print_error('class_not_in_middleware', 'gradereport_transposicao');
         }
     }
@@ -542,5 +548,37 @@ class grade_report_transposicao extends grade_report {
                  '</a></p>';
         }
     }
+
+    //Caso course esteja agrupado em um metacurso, retorna o id deste
+    private function get_parent_meta_id($courseid){
+        global $DB;
+
+        $sql = "SELECT cm.id
+                 FROM {$CFG->dbname}.{$CFG->prefix}course c 
+                 JOIN {$CFG->dbname}.{$CFG->prefix}enrol e
+                   ON (e.customint1 = c.id)
+                 JOIN {$CFG->dbname}.{$CFG->prefix}course cm
+                   ON (cm.id = e.courseid)
+                WHERE e.enrol = 'meta'
+                  AND c.id = {$courseid}";
+        return $DB->get_record_sql($sql);    
+    }
+
+    //true se curso for metacurso
+    private function is_metacourse($courseid){
+        global $DB;
+
+        $sql = "SELECT DISTINCT cm.id
+                 FROM {$CFG->dbname}.{$CFG->prefix}course cm
+                 JOIN {$CFG->dbname}.{$CFG->prefix}enrol e
+                   ON (e.courseid = cm.id AND
+                       e.enrol = 'meta')
+                WHERE cm.id = {$courseid}";
+        return !empty($DB->get_record_sql($sql));//TODO:testar
+    }
 }
+
+
+
+
 ?>

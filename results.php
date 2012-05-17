@@ -31,8 +31,8 @@ print_grade_page_head($COURSE->id, 'report', 'transposicao',
 if (empty($USER->send_results)) {
     echo '<p>', get_string('all_grades_was_sent', 'gradereport_transposicao'), '</p>';
 } else {
-    $names = get_records_select('user', 'username IN ('.implode(',', array_keys($USER->send_results)) . ')',
-                                'firstname,lastname', 'username,firstname');
+    $names = $DB->get_records_select('user', 'username IN ('.implode(',', array_keys($USER->send_results)) . ')',
+                                null,'firstname,lastname', 'username,firstname');
 
     echo '<p>', get_string('some_grades_not_sent', 'gradereport_transposicao'), '</p>',
          '<ul class="send_results">';

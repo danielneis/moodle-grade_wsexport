@@ -108,13 +108,13 @@ class TransposicaoCAPG extends ControleAcademico {
     }
 
     function grades_format_status($grades, $course_grade_item) {
-        global $CFG;
+        global $CFG, $DB;
 
         if ($course_grade_item->gradetype == GRADE_TYPE_VALUE) {
 
             if ($course_grade_item->display == 0) {
                 // o displaytype do item não foi definido, então temos que pegar o displaytype do curso
-                $display = get_field('grade_settings', 'value', 'courseid', $course_grade_item->courseid, 'name', 'displaytype');
+                $display = $DB->get_field('grade_settings', 'value', array('courseid' => $course_grade_item->courseid, 'name' => 'displaytype'));
             } else {
                 $display = $course_grade_item->display;
             }
