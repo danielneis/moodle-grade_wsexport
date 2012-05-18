@@ -1,4 +1,5 @@
 <?php
+require_once($CFG->libdir.'/adodb/adodb.inc.php');
 
 class ControleAcademico {
 
@@ -24,7 +25,8 @@ class ControleAcademico {
             sybase_set_message_handler(array($this, 'sybase_error_handler'));
         }
 
-        if(!$this->db->Connect($CFG->cagr->host, $CFG->cagr->user, $CFG->cagr->pass, $database)) {
+        if(!$this->db->Connect($CFG->grade_report_transposicao_cagr_host, $CFG->grade_report_transposicao_cagr_user, 
+                $CFG->grade_report_transposicao_cagr_pass, $database)) {
             print_error('cagr_connection_error', 'gradereport_transposicao');
         }
 

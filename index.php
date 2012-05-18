@@ -5,9 +5,11 @@ require($CFG->libdir .'/gradelib.php');
 require($CFG->dirroot.'/grade/lib.php');
 require($CFG->dirroot.'/grade/report/transposicao/lib.php');
 
-$courseid = required_param('id', PARAM_INT);// course id
-$force_course_grades = optional_param('force_course_grades', 0);
-$group = optional_param('group', 0);
+$courseid =             required_param('id', PARAM_INT);// course id
+$force_course_grades =  optional_param('force_course_grades', 0, PARAM_INT);
+$group =                optional_param('group', 0, PARAM_INT);
+
+$PAGE->set_url(new moodle_url('/grade/report/transposicao/index.php', array('id'=>$courseid)));
 
 if (!$course = $DB->get_record('course', array('id' => $courseid))) {
     print_error('invalidcourseid');
@@ -25,7 +27,7 @@ $report = new grade_report_transposicao($courseid, $gpr, $context, $force_course
 /// Print header
 print_grade_page_head($COURSE->id, 'report', 'transposicao',
                       get_string('modulename', 'gradereport_transposicao') .
-                      helpbutton('transposicao', 'Transposição', 'gradereport_transposicao', true, false, '', true));
+                      $OUTPUT->help_icon('transposicao', 'gradereport_transposicao'));
 
 if ($report->setup_table() && $report->fill_table()) {
     echo $report->print_group_selector(),
@@ -36,5 +38,5 @@ if ($report->setup_table() && $report->fill_table()) {
     print_error('cannot_populate_tables', 'gradereport_transposicao');
 }
 
-print_footer($course);
+echo $OUTPUT->footer();
 ?>

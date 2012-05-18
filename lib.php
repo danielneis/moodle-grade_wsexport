@@ -32,16 +32,16 @@ class grade_report_transposicao extends grade_report {
 
     function __construct($courseid, $gpr, $context, $force_course_grades, $group=null, $page=null) {
         global $CFG, $USER, $DB;
-
-        if (!isset($CFG->mid_dbname)) {
+       
+        if (empty($CFG->grade_report_transposicao_mid_dbname)) {
             print_error('not_configured_contact_admin');
         }
 
-        if ($this->is_metacurso($courseid)) {
+        if ($this->is_metacourse($courseid)) {
             print_error('is_metacourse_error', 'gradereport_transposicao');
         }
 
-        parent::grade_report($courseid, $gpr, $context, $page);
+        parent::__construct($courseid, $gpr, $context, $page);
 
         if (isset($USER->send_results)) {
             unset($USER->send_results);
@@ -91,6 +91,14 @@ class grade_report_transposicao extends grade_report {
 
         $this->pbarurl = 'index.php?id='.$this->courseid;
         $this->setup_groups($group);
+    }
+
+    function process_data($data){//TODO?
+
+    }
+
+    function process_action($target, $action){//TODO?
+
     }
 
     function setup_groups($group) {
@@ -207,13 +215,13 @@ class grade_report_transposicao extends grade_report {
 
         $this->moodle_grades = array();
         $this->grades_to_send = array();
-        if (!empty(($grades)) {
+        if (is_array($grades)) {
             foreach ($this->moodle_students as $st)  {
-                if (isset($grades->($st->id))) {
-                    $this->moodle_grades[$st->id] = grade_format_gradevalue($grades->($st->id))->finalgrade,
+                if (isset($grades[$st->id])) {
+                    $this->moodle_grades[$st->id] = grade_format_gradevalue($grades[$st->id]->finalgrade,
                                                                             $this->course_grade_item, true,
                                                                             $this->course_grade_item->get_displaytype(), null);
-                    $this->grades_to_send[$st->id] = grade_format_gradevalue($grades->($st->id))->finalgrade,
+                    $this->grades_to_send[$st->id] = grade_format_gradevalue($grades[$st->id]->finalgrade,
                                                                             $this->course_grade_item, false,
                                                                             $this->controle_academico->get_displaytype(), null);
                 } else {
@@ -221,7 +229,7 @@ class grade_report_transposicao extends grade_report {
                     $this->grades_to_send[$st->id] = null;
                 }
             }
-        } else if (!empty($this->moodle_students)) {
+        } else if (is_array($this->moodle_students)) {
             foreach ($this->moodle_students as $st)  {
                 $this->moodle_grades[$st->id] = null;
                 $this->grades_to_send[$st->id] = null;
@@ -260,7 +268,7 @@ class grade_report_transposicao extends grade_report {
 
                     $sent_date = date($this->data_format, strtotime($current_student['dataAtualizacao']));
 
-                    if (!$this->is_grades_in_history && !empty($usuario) && $usuario != strtolower($CFG->cagr->user)) {
+                    if (!$this->is_grades_in_history && !empty($usuario) && $usuario != strtolower($CFG->grade_report_transposicao_cagr_user)) {
 
                         $this->statistics['updated_on_cagr']++;
 
@@ -361,9 +369,11 @@ class grade_report_transposicao extends grade_report {
     private function get_klass_from_actual_courseid() {
         global $CFG, $DB;
 
-        $sql = 'SELECT curso, disciplina, turma, periodo, modalidade
-                  FROM middleware_unificado.View_Geral_Turmas_OK
-                 WHERE shortname = "'.$DB->get_field('course', 'shortname', array('id' => $this->courseid)).'"';
+        $mid_dbname = $CFG->grade_report_transposicao_mid_dbname;
+        $shortname = $DB->get_field('course', 'shortname', array('id' => $this->courseid));
+        $sql = "SELECT curso, disciplina, turma, periodo, modalidade
+                  FROM {$mid_dbname}.View_Geral_Turmas_OK
+                 WHERE shortname = '{$shortname}'";
 
         if (!$this->klass = $DB->get_record_sql($sql)) {
             print_error('class_not_in_middleware', 'gradereport_transposicao');
@@ -551,7 +561,7 @@ class grade_report_transposicao extends grade_report {
 
     //Caso course esteja agrupado em um metacurso, retorna o id deste
     private function get_parent_meta_id($courseid){
-        global $DB;
+        global $DB, $CFG;
 
         $sql = "SELECT cm.id
                  FROM {$CFG->dbname}.{$CFG->prefix}course c 
@@ -566,7 +576,7 @@ class grade_report_transposicao extends grade_report {
 
     //true se curso for metacurso
     private function is_metacourse($courseid){
-        global $DB;
+        global $DB, $CFG;
 
         $sql = "SELECT DISTINCT cm.id
                  FROM {$CFG->dbname}.{$CFG->prefix}course cm
@@ -574,7 +584,7 @@ class grade_report_transposicao extends grade_report {
                    ON (e.courseid = cm.id AND
                        e.enrol = 'meta')
                 WHERE cm.id = {$courseid}";
-        return !empty($DB->get_record_sql($sql));//TODO:testar
+        return $DB->get_record_sql($sql);
     }
 }
 

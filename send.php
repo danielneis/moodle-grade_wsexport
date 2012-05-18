@@ -7,10 +7,10 @@ require($CFG->dirroot.'/grade/report/transposicao/lib.php');
 
 $courseid = required_param('id', PARAM_INT); // course id
 $grades   = required_param('grades'); // grades that was hidden in form
-$mention  = optional_param('mention', array()); // mencao i
-$fi       = optional_param('fi', array()); // mencao i
-$send_yes = optional_param('send_yes'); // send grades
-$send_no  = optional_param('send_no'); // do not send grades
+$mention  = optional_param('mention', array(), PARAM_RAW); // mencao i
+$fi       = optional_param('fi', array(), PARAM_RAW); // mencao i
+$send_yes = optional_param('send_yes', null, PARAM_RAW); // send grades
+$send_no  = optional_param('send_no', null, PARAM_RAW); // do not send grades  TODO: avaliar se null causa problemas
 
 if (is_null($send_yes)) {
     redirect($CFG->wwwroot.'/grade/report/transposicao/index.php?id='.$courseid);
