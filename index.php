@@ -29,6 +29,8 @@ print_grade_page_head($COURSE->id, 'report', 'transposicao',
                       get_string('modulename', 'gradereport_transposicao') .
                       $OUTPUT->help_icon('transposicao', 'gradereport_transposicao'));
 
+echo "<form method=\"post\" action=\"confirm.php?id={$courseid}\">";//gambi: método report->fill_table() já imprime a tabela no Moodle 2.x. TODO:fix
+
 if ($report->setup_table() && $report->fill_table()) {
     echo $report->print_group_selector(),
          $report->print_header(),

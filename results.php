@@ -7,7 +7,9 @@ require($CFG->dirroot.'/grade/report/transposicao/lib.php');
 
 $courseid = required_param('id', PARAM_INT); // course id
 
-if (!$course = get_record('course', 'id', $courseid)) {
+$PAGE->set_url(new moodle_url('/grade/report/transposicao/results.php', array('id'=>$courseid)));
+
+if (!$course = $DB->get_record('course', array('id' => $courseid))) {
     print_error('invalidcourseid');
 }
 
@@ -25,7 +27,7 @@ $navigation = grade_build_nav(__FILE__, $str_transposition, $course->id);
 /// Print header
 print_grade_page_head($COURSE->id, 'report', 'transposicao',
                       get_string('modulename', 'gradereport_transposicao') .
-                      helpbutton('transposicao', 'Transposição', 'gradereport_transposicao', true, false, '', true));
+                      $OUTPUT->help_icon('transposicao', 'gradereport_transposicao'));
 
 
 if (empty($USER->send_results)) {
@@ -46,4 +48,4 @@ echo '<a href="'.$CFG->wwwroot.'/grade/report/transposicao/index.php?id='.$cours
      get_string('return_to_index', 'gradereport_transposicao'),
      '</a>';
 
-print_footer($course);
+echo $OUTPUT->footer();

@@ -107,11 +107,11 @@ class TransposicaoCAGR extends ControleAcademico {
                     {$matricula}, {$grade}, {$i}, '{$f}', {$USER->username}";
 
             $this->db->Execute($sql);
-
+            $msg = utf8_encode(trim($this->db->ErrorMsg()));
             $log_info = "matricula: {$matricula}; nota: {$grade}; mencao: {$i}; frequência: {$f}";
 
-            if (!is_null($this->sybase_error)) {
-                $this->send_results[$matricula] = utf8_encode($this->sybase_error);
+            if($msg != 'ok'){//TODO:testar
+                $this->send_results[$matricula] = $msg;
                 $log_info .= ' ERRO: '.$this->send_results[$matricula];
             }
             add_to_log($this->courseid, 'grade', 'transposicao', 'send.php', $log_info);

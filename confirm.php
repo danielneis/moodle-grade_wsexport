@@ -11,8 +11,9 @@ $fi            = optional_param('fi', array(), PARAM_RAW);// frequencia insufici
 $grades_cagr   = optional_param('grades_cagr', array(), PARAM_RAW);// grades that was updated on cagr, hidden in form
 $overwrite_all = optional_param('overwrite_all', 0, PARAM_INT);// should overwrite grades updated directly on cagr
 
+$PAGE->set_url(new moodle_url('/grade/report/transposicao/confirm.php', array('id'=>$courseid)));
 
-if (!$course = get_record('course', 'id', $courseid)) {
+if (!$course = $DB->get_record('course', array('id' => $courseid))) {
     print_error('invalidcourseid');
 }
 
@@ -45,7 +46,7 @@ $navigation = grade_build_nav(__FILE__, $str_transposition, $course->id);
 /// Print header
 print_grade_page_head($COURSE->id, 'report', 'transposicao',
                       get_string('modulename', 'gradereport_transposicao') .
-                      helpbutton('transposicao', 'Transposição', 'gradereport_transposicao', true, false, '', true));
+                      $OUTPUT->help_icon('transposicao', 'gradereport_transposicao'));
 
 echo '<form method="post" action="send.php?id='.$course->id.'">';
 
@@ -65,5 +66,5 @@ echo '<p>', $str_notice, '</p><p>',$str_confirm, '</p>',
      '<p class="yes_no" ><input type="submit" name="send_yes" value="'.$str_yes.'" />',
      '<input type="submit" name="send_no" value="'.$str_no.'" /></p></form>';
 
-print_footer($course);
+echo $OUTPUT->footer();
 ?>

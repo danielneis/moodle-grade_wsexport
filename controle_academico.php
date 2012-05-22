@@ -1,5 +1,6 @@
 <?php
 require_once($CFG->libdir.'/adodb/adodb.inc.php');
+require_once($CFG->libdir.'/adodb/adodb-exceptions.inc.php');
 
 class ControleAcademico {
 
@@ -21,15 +22,14 @@ class ControleAcademico {
 
         $this->db = ADONewConnection('sybase');
         $this->db->charSet = 'cp850';
-        if (function_exists('sybase_set_message_handler')) {
-            sybase_set_message_handler(array($this, 'sybase_error_handler'));
-        }
+        try{
+            $this->db->Connect($CFG->grade_report_transposicao_cagr_host, $CFG->grade_report_transposicao_cagr_user, 
+                $CFG->grade_report_transposicao_cagr_pass, $database);
 
-        if(!$this->db->Connect($CFG->grade_report_transposicao_cagr_host, $CFG->grade_report_transposicao_cagr_user, 
-                $CFG->grade_report_transposicao_cagr_pass, $database)) {
+        }catch(Exception $e){
+            $this->sybase_error = $e->msg;
             print_error('cagr_connection_error', 'gradereport_transposicao');
         }
-
         $this->klass = $klass;
         $this->courseid = $courseid;
     }
@@ -42,14 +42,6 @@ class ControleAcademico {
 
     function get_system() {
         return $this->system;
-    }
-
-    function sybase_error_handler($msgnumber, $severity, $state, $line, $text) {
-        if ($text == 'ok') {
-            $this->sybase_error = null;
-        } else {
-            $this->sybase_error = $text;
-        }
     }
 
     function submission_date_status() {

@@ -93,12 +93,12 @@ class TransposicaoCAPG extends ControleAcademico {
                     {$this->klass->ano}, {$this->klass->periodo}, '{$this->klass->disciplina}',
                     {$matricula}, {$grade}, '{$f}', {$USER->username}";
 
-            $result = $this->db->Execute($sql);
+            $this->db->Execute($sql);
+            $msg = utf8_encode(trim($this->db->ErrorMsg()));
+            $log_info = "matricula: {$matricula}; nota: {$grade}; mencao: {$i}; frequência: {$f}";
 
-            $log_info = "matricula: {$matricula}; nota: {$grade}; frequência: {$f}";
-
-            if (!$result) {
-                $this->send_results[$matricula] = $this->db->ErrorMsg() . "consulta: {$sql}";
+            if($msg != 'ok'){//TODO:testar
+                $this->send_results[$matricula] = $msg;
                 $log_info .= ' ERRO: '.$this->send_results[$matricula];
             }
             add_to_log($this->courseid, 'grade', 'transposicao', 'send.php', $log_info);

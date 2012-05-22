@@ -36,13 +36,11 @@ class grade_report_transposicao extends grade_report {
         if (empty($CFG->grade_report_transposicao_mid_dbname)) {
             print_error('not_configured_contact_admin');
         }
-
-        if ($this->is_metacourse($courseid)) {
-            print_error('is_metacourse_error', 'gradereport_transposicao');
-        }
-
         parent::__construct($courseid, $gpr, $context, $page);
 
+        if ($this->is_metacourse()) {
+            print_error('is_metacourse_error', 'gradereport_transposicao');
+        }
         if (isset($USER->send_results)) {
             unset($USER->send_results);
         }
@@ -129,8 +127,6 @@ class grade_report_transposicao extends grade_report {
         $this->msg_grade_updated_on_cagr();
         $this->msg_using_metacourse_grades();
         $this->msg_groups();
-
-        echo "<form method=\"post\" action=\"confirm.php?id={$this->courseid}\">";
     }
 
     function print_group_selector() {
@@ -193,7 +189,7 @@ class grade_report_transposicao extends grade_report {
 
     private function get_course_grade_item($force_course_grades = false) {
 
-        if ($id_course_grade = $this->get_parent_meta_id($this->courseid)) {
+        if ($id_course_grade = $this->get_parent_meta_id()) {
             $this->has_metacourse = true;
             $this->using_metacourse_grades = true;
 
@@ -455,6 +451,7 @@ class grade_report_transposicao extends grade_report {
         }
 
         $this->table_ok->setup();
+
         return true;
     }
 
@@ -560,7 +557,7 @@ class grade_report_transposicao extends grade_report {
     }
 
     //Caso course esteja agrupado em um metacurso, retorna o id deste
-    private function get_parent_meta_id($courseid){
+    private function get_parent_meta_id(){
         global $DB, $CFG;
 
         $sql = "SELECT cm.id
@@ -570,12 +567,12 @@ class grade_report_transposicao extends grade_report {
                  JOIN {$CFG->dbname}.{$CFG->prefix}course cm
                    ON (cm.id = e.courseid)
                 WHERE e.enrol = 'meta'
-                  AND c.id = {$courseid}";
+                  AND c.id = {$this->courseid}";
         return $DB->get_record_sql($sql);    
     }
 
     //true se curso for metacurso
-    private function is_metacourse($courseid){
+    private function is_metacourse(){
         global $DB, $CFG;
 
         $sql = "SELECT DISTINCT cm.id
@@ -583,7 +580,7 @@ class grade_report_transposicao extends grade_report {
                  JOIN {$CFG->dbname}.{$CFG->prefix}enrol e
                    ON (e.courseid = cm.id AND
                        e.enrol = 'meta')
-                WHERE cm.id = {$courseid}";
+                WHERE cm.id = {$this->courseid}";
         return $DB->get_record_sql($sql);
     }
 }

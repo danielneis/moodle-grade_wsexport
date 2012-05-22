@@ -31,7 +31,7 @@ $string['grades_in_history'] = 'As notas desta turma não podem ser transpostas 
 $string['grades_selected_by_group'] = 'A transposição de notas não pode ser feita pois você está visualizando apenas um grupo. Para transpor as notas é preciso visualizar todos os participantes. Para isso, defina o campo \"Grupos visíveis\" como \"Todos os participantes\" no topo deste relatório e clique no botão \"Transpor notas para o CAGR/CAPG\".';
 $string['grades_updated_on_cagr'] = 'Atenção: há notas que foram digitadas diretamente no CAGR (veja a coluna \"Alertas\"). Para transpor as notas desses alunos, substituindo as existentes, é necessário marcar a opção \"sobrepor\" que encontra-se no final deste relatório.';
 $string['grade_updated_on_cagr'] = 'Nota alterada diretamente no CAGR/CAPG.';
-$string['invalidusername'] = 'Para transpor as notas, a sua identificação deve ser um número. Nenhuma nota foi transposta.';
+$string['invalidusername'] = 'Para transpor as notas, você deve ser um professor. Nenhuma nota foi transposta.';
 $string['is_metacourse_error'] = 'Este é um agrupamento de turmas. Neste caso, a transposição de notas deve ser realizada nas turmas afiliadas, uma a uma. Não é necessário desagrupar nem executar qualquer outra ação adicional. Basta acessar a turma e seguir os mesmos passos indicados para uma turma não agrupada. Não estranhe caso não haja conteúdo nem notas registradas na turma afiliada. Ao selecionar o relatório de transposição de notas, as notas são automaticamente buscadas no agrupamento.';
 $string['mention'] = 'Menção I';
 $string['mid_dbname_nome'] = 'Nome BD Middleware';
@@ -89,7 +89,7 @@ $string['transposicao_help'] =
      <li><strong>Nota CAGR/CAPG:</strong> a nota que está atribuída ao aluno no CAGR</li>
      <li><strong>Data de envio:</strong> data em que a nota foi enviada ao CAGR.</li>
      <li><strong>Alertas:</strong> campo onde são apresentadas mensagens indicando a ocorrência de problemas ou falhas.</li>
-    </ol>';
+    </ol>';//TODO: reformatar
 $string['unformatted_grades_cagr'] = 'Há pelo menos uma nota fora do padrão da UFSC. Isto impede o envio de notas.
 \"Todas as avaliações serão expressas através de notas graduadas de 0 (zero) a 10 (dez),
 não podendo ser fracionadas aquém ou além de 0,5 (zero vírgula cinco).\" (Resolução Nº017/CUn/97)';
