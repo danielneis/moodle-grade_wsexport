@@ -18,9 +18,7 @@ if (!$course = $DB->get_record('course', array('id' => $courseid))) {
 }
 
 require_login($course->id);
-
 $context = get_context_instance(CONTEXT_COURSE, $course->id);
-
 require_capability('gradereport/transposicao:send', $context);
 
 $str_grades        = get_string('grades');
@@ -64,7 +62,6 @@ foreach ($fi as $matricula => $fi) {
 
 echo '<p>', $str_notice, '</p><p>',$str_confirm, '</p>',
      '<p class="yes_no" ><input type="submit" name="send_yes" value="'.$str_yes.'" />',
-     '<input type="submit" name="send_no" value="'.$str_no.'" /></p></form>';
-
-echo $OUTPUT->footer();
+     '<input type="submit" name="send_no" value="'.$str_no.'" /></p></form>',
+     $OUTPUT->footer();
 ?>

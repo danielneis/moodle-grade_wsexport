@@ -26,7 +26,6 @@ if (!is_numeric($USER->username)) {
 
 require_login($course->id);
 $context = get_context_instance(CONTEXT_COURSE, $course->id);
-
 require_capability('gradereport/transposicao:send', $context);
 
 $gpr = new grade_plugin_return(array('type'=>'report', 'plugin'=>'grader', 'courseid'=>$courseid));
