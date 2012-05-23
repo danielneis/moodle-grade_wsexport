@@ -6,8 +6,8 @@ require($CFG->dirroot.'/grade/lib.php');
 
 $courseid      = required_param('id', PARAM_INT);// course id
 $grades        = required_param_array('grades', PARAM_INT);// grades that was hidden in form
-$mention       = optional_param('mention', array(), PARAM_RAW);// mencao i
-$fi            = optional_param('fi', array(), PARAM_RAW);// frequencia insuficiente 
+$mention       = optional_param_array('mention', array(), PARAM_RAW);// mencao i
+$fi            = optional_param_array('fi', array(), PARAM_RAW);// frequencia insuficiente 
 $grades_cagr   = optional_param('grades_cagr', array(), PARAM_RAW);// grades that was updated on cagr, hidden in form
 $overwrite_all = optional_param('overwrite_all', 0, PARAM_INT);// should overwrite grades updated directly on cagr
 

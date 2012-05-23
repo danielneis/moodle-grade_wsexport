@@ -208,7 +208,6 @@ class grade_report_transposicao extends grade_report {
         global $DB;
 
         $grades = $DB->get_records('grade_grades', array('itemid' => $this->course_grade_item->id), 'userid', 'userid, finalgrade');
-
         $this->moodle_grades = array();
         $this->grades_to_send = array();
         if (is_array($grades)) {
@@ -239,7 +238,6 @@ class grade_report_transposicao extends grade_report {
         if (!is_array($this->moodle_students)) {
             return; // nenhum estudante no moodle
         }
-
         foreach ($this->moodle_students as $student) {
             $student->moodle_grade = $this->moodle_grades[$student->id];
             if (isset($this->controle_academico_grades[$student->username])) {

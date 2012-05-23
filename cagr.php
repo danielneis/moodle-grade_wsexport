@@ -110,7 +110,7 @@ class TransposicaoCAGR extends ControleAcademico {
             $msg = utf8_encode(trim($this->db->ErrorMsg()));
             $log_info = "matricula: {$matricula}; nota: {$grade}; mencao: {$i}; frequência: {$f}";
 
-            if($msg != 'ok'){//TODO:testar
+            if($msg != 'ok'){
                 $this->send_results[$matricula] = $msg;
                 $log_info .= ' ERRO: '.$this->send_results[$matricula];
             }
