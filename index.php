@@ -29,16 +29,12 @@ print_grade_page_head($COURSE->id, 'report', 'transposicao',
                       get_string('modulename', 'gradereport_transposicao') .
                       $OUTPUT->help_icon('transposicao', 'gradereport_transposicao'));
 
-echo "<form method=\"post\" action=\"confirm.php?id={$courseid}\">";//gambi: método report->fill_table() já imprime a tabela no Moodle 2.x. TODO:fix
-
-if ($report->setup_table() && $report->fill_table()) {
-    echo $report->print_group_selector(),
-         $report->print_header(),
-         $report->print_tables(),
-         $report->print_footer();
-} else {
-    print_error('cannot_populate_tables', 'gradereport_transposicao');
-}
+//TODO: refazer logica de criação e output de tabelas, mudanças no flexible_table quebraram a lógica antiga
+$report->setup_table();
+$report->print_group_selector();
+$report->print_header();
+$report->print_tables();
+$report->print_footer();
 
 echo $OUTPUT->footer();
 ?>

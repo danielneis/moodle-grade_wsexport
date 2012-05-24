@@ -8,7 +8,7 @@ $capabilities = array(
                 'student' => CAP_PREVENT,
                 'teacher' => CAP_ALLOW,
                 'editingteacher' => CAP_ALLOW,
-                'admin' => CAP_ALLOW
+                'manager' => CAP_ALLOW
                 )
             ),
         'gradereport/transposicao:send' => array(
@@ -19,7 +19,7 @@ $capabilities = array(
                 'student' => CAP_PROHIBIT,
                 'teacher' => CAP_PROHIBIT,
                 'editingteacher' => CAP_ALLOW,
-                'admin' => CAP_ALLOW
+                'manager' => CAP_ALLOW
                 )
             ),
         );

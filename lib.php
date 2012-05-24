@@ -108,25 +108,19 @@ class grade_report_transposicao extends grade_report {
     }
 
     function setup_table() {
-        return ($this->setup_ok_table() && $this->setup_not_in_cagr_table() && $this->setup_not_in_moodle_table());
-    }
-
-    function fill_table() {
-
-        $this->fill_ok_table();
-        $this->fill_not_in_moodle_table();
-        $this->fill_not_in_cagr_table();
-        return true;
+        $this->setup_ok_table();
+        $this->setup_not_in_cagr_table();
+        $this->setup_not_in_moodle_table();
     }
 
     function print_header() {
-
         $this->msg_submission_dates();
         $this->msg_unformatted_grades();
         $this->msg_grade_in_history();
         $this->msg_grade_updated_on_cagr();
         $this->msg_using_metacourse_grades();
         $this->msg_groups();
+        echo "<form method=\"post\" action=\"confirm.php?id={$this->courseid}\">";
     }
 
     function print_group_selector() {
@@ -134,40 +128,68 @@ class grade_report_transposicao extends grade_report {
     }
 
     function print_tables() {
-        ob_start();
+        //funções "fill_" devem ser chamadas nesta ordem
+        $rows_ok = $this->fill_ok_table();
+        $rows_not_in_moodle = $this->fill_not_in_moodle_table();
+        $rows_not_in_cagr = $this->fill_not_in_cagr_table();
 
-        if ($this->statistics['not_in_moodle'] > 0) {
+        if(!($rows_ok && $rows_not_in_moodle && $rows_not_in_cagr)){
+            print_error('cannot_populate_tables', 'gradereport_transposicao');
+        }
+
+        ob_start();
+        $this->print_table_not_in_moodle($rows_not_in_moodle);
+        $this->print_table_not_in_cagr($rows_not_in_cagr);
+        $this->print_ok_table($rows_ok);
+        ob_end_flush();
+    }
+
+    function print_table_not_in_moodle($rows){
+        if(!empty($rows) && ($this->statistics['not_in_moodle']  > 0)){
             echo '<h2 class="table_title">',
                  get_string('students_not_in_moodle', 'gradereport_transposicao'),
                  ' - ', $this->statistics['not_in_moodle'], get_string('students', 'gradereport_transposicao'),
                  get_string('wont_be_sent', 'gradereport_transposicao'),
                  '</h2>';
-            $this->table_not_in_moodle->print_html();
+            foreach($rows as $row){
+                $this->table_not_in_moodle->add_data($row);
+            }
+            $this->table_not_in_moodle->print_html();//apenas finaliza tabela
         }
+    }
 
-        if ($this->statistics['not_in_cagr'] > 0) {
+    function print_table_not_in_cagr($rows){
+        if (!empty($rows) && $this->statistics['not_in_cagr'] > 0) {
             echo '<h2 class="table_title">',
                  get_string('students_not_in_cagr', 'gradereport_transposicao'),
                  ' - ', $this->statistics['not_in_cagr'], get_string('students', 'gradereport_transposicao'),
                  get_string('wont_be_sent', 'gradereport_transposicao'),
                  '</h2>';
-            $this->table_not_in_cagr->print_html();
+            foreach($rows as $row){
+                $this->table_not_in_cagr->add_data(array_merge($row, array('', '', '')));//Moodle 2: já imprime
+            }
+            $this->table_not_in_cagr->print_html();//apenas finaliza tabela
         }
-
-        echo '<h2 class="table_title">', get_string('students_ok', 'gradereport_transposicao');
-        if ($this->statistics['ok'] > 0) {
-            echo ' - ', $this->statistics['ok'], get_string('students', 'gradereport_transposicao');
-        }
-        echo '</h2>';
-        $this->table_ok->print_html();
-
-        return ob_get_clean();
     }
 
+    function print_ok_table($rows){
+        if(!empty($rows)){//improvável: se for vazio já lançou exceção
+            echo '<h2 class="table_title">', get_string('students_ok', 'gradereport_transposicao');
+            if ($this->statistics['ok'] > 0) {
+                echo ' - ', $this->statistics['ok'], get_string('students', 'gradereport_transposicao');
+            }
+            echo '</h2>';
+            foreach($rows as $row){
+                $this->table_ok->add_data($row);
+            }
+            $this->table_ok->print_html();
+        }
+    }
+
+
+
     function print_footer() {
-
         echo '<div class="report_footer">';
-
         $this->msg_submission_dates();
         $this->msg_unformatted_grades();
         $this->msg_grade_in_history();
@@ -176,7 +198,6 @@ class grade_report_transposicao extends grade_report {
         $this->select_overwrite_grades();
 
         $str_submit_button = get_string('submit_button', 'gradereport_transposicao');
-
         $dis = ($this->cannot_submit == true) ? 'disabled="disabled"' : '';
 
         echo '<input type="submit" value="',$str_submit_button , '" ', $dis,' />',
@@ -235,8 +256,9 @@ class grade_report_transposicao extends grade_report {
     private function fill_ok_table() {
         global $CFG;
 
+        $rows = array();
         if (!is_array($this->moodle_students)) {
-            return; // nenhum estudante no moodle
+            return false; // nenhum estudante no moodle
         }
         foreach ($this->moodle_students as $student) {
             $student->moodle_grade = $this->moodle_grades[$student->id];
@@ -304,18 +326,24 @@ class grade_report_transposicao extends grade_report {
                 }
 
                 $row = array_merge($row, array($grade_in_cagr_formatted, $sent_date, $alert));
+                $rows[] = $row;
 
-                $this->table_ok->add_data($row);
+                //$this->table_ok->add_data($row); //Moodle 2: imprime tabela
             } else {
                 // o aluno nao esta no cagr
                 $this->not_in_cagr_students[] = $student;
             }
         }
+        $this->statistics['not_in_moodle'] = sizeof($this->controle_academico_grades);//os que estão no moodle foram removidos
+        return !empty($rows) ? $rows : false;
     }
 
     private function fill_not_in_moodle_table() {
+        $rows = array();
+
         // caso a seleção seja feita por algum grupo é desconsiderado os alunos que estão no CAGR e não estão no Moodle
         if (empty($this->group)) {
+
             // agora, $this->controle_academico_grade contém apenas os estudantes que não estão no moodle
             // isso ocorre por que essa função é chamada após fill_ok_table()
             foreach  ($this->controle_academico_grades as $matricula => $student) {
@@ -336,15 +364,14 @@ class grade_report_transposicao extends grade_report {
                 }
 
                 $row = array_merge($row, array($grade_in_cagr, $sent_date, ''));
-
-                $this->table_not_in_moodle->add_data($row);
+                $rows[] = $row;
             }
-            $this->statistics['not_in_moodle'] = sizeof($this->controle_academico_grades);
         }
+        return !empty($rows) ? $rows : true; //ok se for vazio
     }
 
     private function fill_not_in_cagr_table() {
-
+        $rows = array();
         $this->statistics['not_in_cagr'] = sizeof($this->not_in_cagr_students);
         foreach ($this->not_in_cagr_students as $student) {
 
@@ -356,8 +383,9 @@ class grade_report_transposicao extends grade_report {
                 $row[] = get_checkbox("fi[{$student->username}]", false, true);
             }
 
-            $this->table_not_in_cagr->add_data(array_merge($row, array('', '', '')));
+            $rows[] = $row;
         }
+        return !empty($rows) ? $rows : true; //ok se for vazio
     }
 
     private function get_klass_from_actual_courseid() {
