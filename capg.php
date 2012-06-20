@@ -27,7 +27,7 @@ class TransposicaoCAPG extends ControleAcademico {
 
     // a transposicao pode ser feitas para turmas do ano passado para frente
     function get_submission_date_range() {
-        return date('Y') - 1;
+        return date('Y') - 2;
     }
 
     function in_submission_date_range() {
