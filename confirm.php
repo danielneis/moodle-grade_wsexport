@@ -5,7 +5,7 @@ require($CFG->libdir .'/gradelib.php');
 require($CFG->dirroot.'/grade/lib.php');
 
 $courseid      = required_param('id', PARAM_INT);// course id
-$grades        = required_param_array('grades', PARAM_INT);// grades that was hidden in form
+$grades        = required_param_array('grades', PARAM_FLOAT);// grades that was hidden in form
 $mention       = optional_param_array('mention', array(), PARAM_RAW);// mencao i
 $fi            = optional_param_array('fi', array(), PARAM_RAW);// frequencia insuficiente 
 $grades_cagr   = optional_param('grades_cagr', array(), PARAM_RAW);// grades that was updated on cagr, hidden in form
