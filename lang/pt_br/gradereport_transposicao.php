@@ -29,10 +29,10 @@ $string['error_on_middleware_connection'] = 'Erro ao conectar ao middleware';
 $string['fi'] = 'Frequência Insuficiente';
 $string['grades_in_history'] = 'As notas desta turma não podem ser transpostas pois já foram incorporadas ao histórico escolar do estudante.';
 $string['grades_selected_by_group'] = 'A transposição de notas não pode ser feita pois você está visualizando apenas um grupo. Para transpor as notas é preciso visualizar todos os participantes. Para isso, defina o campo \"Grupos visíveis\" como \"Todos os participantes\" no topo deste relatório e clique no botão \"Transpor notas para o CAGR/CAPG\".';
-$string['grades_updated_on_cagr'] = 'Atenção: há notas que foram digitadas diretamente no CAGR (veja a coluna \"Alertas\"). Para transpor as notas desses alunos, substituindo as existentes, é necessário marcar a opção \"sobrepor\" que encontra-se no final deste relatório.';
+$string['grades_updated_on_cagr'] = 'Atenção: há notas que foram digitadas diretamente no CAGR (veja a coluna "Alertas"). Para transpor as notas desses alunos, substituindo as existentes, é necessário marcar a opção \"sobrepor\" que encontra-se no final deste relatório.';
 $string['grade_updated_on_cagr'] = 'Nota alterada diretamente no CAGR/CAPG.';
 $string['invalidusername'] = 'Para transpor as notas, você deve ser um professor. Nenhuma nota foi transposta.';
-$string['is_metacourse_error'] = 'Este é um agrupamento de turmas. Neste caso, a transposição de notas deve ser realizada nas turmas afiliadas, uma a uma. Não é necessário desagrupar nem executar qualquer outra ação adicional. Basta acessar a turma e seguir os mesmos passos indicados para uma turma não agrupada. Não estranhe caso não haja conteúdo nem notas registradas na turma afiliada. Ao selecionar o relatório de transposição de notas, as notas são automaticamente buscadas no agrupamento.';
+$string['is_metacourse_error'] = 'Este é um agrupamento de turmas. Neste caso, a transposição de notas deve ser realizada nas turmas afiliadas, uma a uma.<br/> Não é necessário desagrupar nem executar qualquer outra ação adicional.<br/> Abaixo encontram-se referências para o relatório de transposição de cada uma destas turmas. Apesar de não haver notas registradas nas turmas afiliadas, ao selecionar o relatório de transposição de notas, as notas são automaticamente buscadas no agrupamento.';
 $string['mention'] = 'Menção I';
 $string['mid_dbname_nome'] = 'Nome BD Middleware';
 $string['mid_dbname_msg'] = 'Nome do Banco de Dados do Middleware';
@@ -65,6 +65,8 @@ $string['transposicao_help'] =
 $string['unformatted_grades_cagr'] = 'Há pelo menos uma nota fora do padrão da UFSC. Isto impede o envio de notas.
 \"Todas as avaliações serão expressas através de notas graduadas de 0 (zero) a 10 (dez),
 não podendo ser fracionadas aquém ou além de 0,5 (zero vírgula cinco).\" (Resolução Nº017/CUn/97)';
+$string['turmas_prof'] = 'Turmas do Professor';
+$string['turmas_outros'] = 'Turmas de Outros Professores';
 $string['unformatted_grades_capg_not_using_letters'] = 'Você não está utilizando letras ou escalas.';
 $string['unformatted_grades_capg_invalid_letters'] = 'O curso está utilizando letras fora do padrão UFSC.';
 $string['unformatted_grades_capg_invalid_scale'] = 'O curso está utilizando uma escala de notas fora do padrão UFSC.';

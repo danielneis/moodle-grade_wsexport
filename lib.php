@@ -3,6 +3,68 @@ require_once($CFG->dirroot.'/grade/report/lib.php');
 require_once($CFG->dirroot.'/grade/report/transposicao/weblib.php');
 require_once($CFG->libdir.'/tablelib.php');
 
+//true se curso for metacurso
+function is_metacourse($courseid){
+    global $DB, $CFG;
+
+    $sql = "SELECT DISTINCT cm.id
+             FROM {$CFG->dbname}.{$CFG->prefix}course cm
+             JOIN {$CFG->dbname}.{$CFG->prefix}enrol e
+               ON (e.courseid = cm.id AND
+                   e.enrol = 'meta')
+            WHERE cm.id = {$courseid}";
+    return $DB->get_record_sql($sql);
+}
+
+function turmas_de_um_metacurso($id_metacurso) {
+    global $CFG, $DB;
+
+    $sql = "SELECT DISTINCT e.customint1 as id, filha.fullname
+                       FROM {$CFG->dbname}.{$CFG->prefix}course c
+                       JOIN {$CFG->dbname}.{$CFG->prefix}enrol e
+                         ON (e.courseid = c.id)
+                       JOIN {$CFG->dbname}.{$CFG->prefix}course filha
+                         ON (e.customint1 = filha.id)
+                      WHERE e.enrol = 'meta'
+                        AND c.id = {$id_metacurso}";
+    return $DB->get_records_sql($sql);
+}
+
+function lista_turmas_afiliadas($courseid){
+    global $OUTPUT, $CFG;
+    echo $OUTPUT->box_start('generalbox block_cagr_centralizado');
+    echo get_string('is_metacourse_error','gradereport_transposicao');
+    echo $OUTPUT->box_end();
+
+    $turmas = turmas_de_um_metacurso($courseid);
+    $turmas_professor = array();
+    $turmas_outros = array();
+
+    foreach($turmas as $t){
+        $context = get_context_instance(CONTEXT_COURSE, $t->id);
+
+        if(has_capability('gradereport/transposicao:view', $context)){
+            $turmas_professor[] = "<a href='{$CFG->wwwroot}/grade/report/transposicao/index.php?id={$t->id}' target='_blank'> {$t->fullname} </a>";
+        }else{
+            $turmas_outros[] = $t->fullname;
+        }
+    }
+    if(!empty($turmas_professor)){
+        echo "<br/><br/><h3 class='main'>" . get_string('turmas_prof', 'gradereport_transposicao') . '</h3><ul>';
+        foreach($turmas_professor as $t){
+            echo "<li>{$t}</li>";
+        }
+        echo '</ul>';
+    }
+    if(!empty($turmas_outros)){
+        echo "<br/><br/><h3 class='main'>" . get_string('turmas_outros', 'gradereport_transposicao') . '</h3><ul>';
+        foreach($turmas_outros as $t){
+            echo "<li>{$t}</li>";
+        }
+        echo '</ul>';
+    }
+}
+
 class grade_report_transposicao extends grade_report {
 
     private $klass; // um registro (curso, disciplina, turma, periodo) da tabela Turmas - inicializado em get_klass_from_actual_courseid()
@@ -30,17 +92,16 @@ class grade_report_transposicao extends grade_report {
 
     private $group = null; //if not selected group
 
+
     function __construct($courseid, $gpr, $context, $force_course_grades, $group=null, $page=null) {
         global $CFG, $USER, $DB;
        
         if (empty($CFG->grade_report_transposicao_mid_dbname)) {
             print_error('not_configured_contact_admin');
         }
+
         parent::__construct($courseid, $gpr, $context, $page);
 
-        if ($this->is_metacourse()) {
-            print_error('is_metacourse_error', 'gradereport_transposicao');
-        }
         if (isset($USER->send_results)) {
             unset($USER->send_results);
         }
@@ -594,21 +655,14 @@ class grade_report_transposicao extends grade_report {
                    ON (cm.id = e.courseid)
                 WHERE e.enrol = 'meta'
                   AND c.id = {$this->courseid}";
-        return $DB->get_record_sql($sql);    
+        if($course = $DB->get_record_sql($sql)) {
+            return $course->id;
+        } else {
+            return false;
+        }
     }
 
-    //true se curso for metacurso
-    private function is_metacourse(){
-        global $DB, $CFG;
 
-        $sql = "SELECT DISTINCT cm.id
-                 FROM {$CFG->dbname}.{$CFG->prefix}course cm
-                 JOIN {$CFG->dbname}.{$CFG->prefix}enrol e
-                   ON (e.courseid = cm.id AND
-                       e.enrol = 'meta')
-                WHERE cm.id = {$this->courseid}";
-        return $DB->get_record_sql($sql);
-    }
 }
 
 
