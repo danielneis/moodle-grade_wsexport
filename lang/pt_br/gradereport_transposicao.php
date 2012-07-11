@@ -65,8 +65,8 @@ $string['transposicao_help'] =
 $string['unformatted_grades_cagr'] = 'Há pelo menos uma nota fora do padrão da UFSC. Isto impede o envio de notas.
 \"Todas as avaliações serão expressas através de notas graduadas de 0 (zero) a 10 (dez),
 não podendo ser fracionadas aquém ou além de 0,5 (zero vírgula cinco).\" (Resolução Nº017/CUn/97)';
-$string['turmas_prof'] = 'Turmas do Professor';
-$string['turmas_outros'] = 'Turmas de Outros Professores';
+$string['turmas_prof'] = 'Turmas que você pode transpor notas';
+$string['turmas_outros'] = 'Turmas de outros professores (os responsáveis devem transpor as notas)';
 $string['unformatted_grades_capg_not_using_letters'] = 'Você não está utilizando letras ou escalas.';
 $string['unformatted_grades_capg_invalid_letters'] = 'O curso está utilizando letras fora do padrão UFSC.';
 $string['unformatted_grades_capg_invalid_scale'] = 'O curso está utilizando uma escala de notas fora do padrão UFSC.';

@@ -50,14 +50,14 @@ function lista_turmas_afiliadas($courseid){
         }
     }
     if(!empty($turmas_professor)){
-        echo "<br/><br/><h3 class='main'>" . get_string('turmas_prof', 'gradereport_transposicao') . '</h3><ul>';
+        echo "<br/><br/><h3>" . get_string('turmas_prof', 'gradereport_transposicao') . '</h3><ul>';
         foreach($turmas_professor as $t){
             echo "<li>{$t}</li>";
         }
         echo '</ul>';
     }
     if(!empty($turmas_outros)){
-        echo "<br/><br/><h3 class='main'>" . get_string('turmas_outros', 'gradereport_transposicao') . '</h3><ul>';
+        echo "<br/><br/><h3>" . get_string('turmas_outros', 'gradereport_transposicao') . '</h3><ul>';
         foreach($turmas_outros as $t){
             echo "<li>{$t}</li>";
         }
