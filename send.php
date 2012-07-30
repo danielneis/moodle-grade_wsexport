@@ -6,7 +6,7 @@ require($CFG->dirroot.'/grade/lib.php');
 require($CFG->dirroot.'/grade/report/transposicao/lib.php');
 
 $courseid = required_param('id', PARAM_INT); // course id
-$grades   = required_param_array('grades', PARAM_FLOAT);// grades that was hidden in form
+$grades   = required_param_array('grades', PARAM_RAW);// grades that was hidden in form
 $mention  = optional_param_array('mention', array(), PARAM_RAW); // mencao i
 $fi       = optional_param_array('fi', array(), PARAM_RAW); // mencao i
 $send_yes = optional_param('send_yes', null, PARAM_RAW); // send grades
