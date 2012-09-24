@@ -4,8 +4,10 @@ require_once($CFG->dirroot.'/grade/report/transposicao/weblib.php');
 require_once($CFG->libdir.'/tablelib.php');
 
 //true se curso for metacurso
+
+
 function is_metacourse($courseid){
-    global $DB, $CFG;
+    global $CFG;
 
     $sql = "SELECT DISTINCT cm.id
              FROM {$CFG->dbname}.{$CFG->prefix}course cm
@@ -13,11 +15,11 @@ function is_metacourse($courseid){
                ON (e.courseid = cm.id AND
                    e.enrol = 'meta')
             WHERE cm.id = {$courseid}";
-    return $DB->get_record_sql($sql);
+    return academico::get_record_sql($sql);
 }
 
 function turmas_de_um_metacurso($id_metacurso) {
-    global $CFG, $DB;
+    global $CFG;
 
     $sql = "SELECT DISTINCT e.customint1 as id, filha.fullname
                        FROM {$CFG->dbname}.{$CFG->prefix}course c
@@ -27,7 +29,7 @@ function turmas_de_um_metacurso($id_metacurso) {
                          ON (e.customint1 = filha.id)
                       WHERE e.enrol = 'meta'
                         AND c.id = {$id_metacurso}";
-    return $DB->get_records_sql($sql);
+    return academico::get_records_sql($sql);
 }
 
 function lista_turmas_afiliadas($courseid){
@@ -455,10 +457,10 @@ class grade_report_transposicao extends grade_report {
         $mid_dbname = $CFG->grade_report_transposicao_mid_dbname;
         $shortname = $DB->get_field('course', 'shortname', array('id' => $this->courseid));
         $sql = "SELECT curso, disciplina, turma, periodo, modalidade
-                  FROM {$mid_dbname}.View_Geral_Turmas_OK
+                  FROM View_Geral_Turmas_OK
                  WHERE shortname = '{$shortname}'";
 
-        if (!$this->klass = $DB->get_record_sql($sql)) {
+        if (!$this->klass = academico::get_record_sql($sql)) {
             print_error('class_not_in_middleware', 'gradereport_transposicao');
         }
     }
@@ -655,7 +657,7 @@ class grade_report_transposicao extends grade_report {
                    ON (cm.id = e.courseid)
                 WHERE e.enrol = 'meta'
                   AND c.id = {$this->courseid}";
-        if($course = $DB->get_record_sql($sql)) {
+        if($course = academico::get_record_sql($sql)) {
             return $course->id;
         } else {
             return false;
