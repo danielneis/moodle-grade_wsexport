@@ -98,7 +98,7 @@ class grade_report_transposicao extends grade_report {
     function __construct($courseid, $gpr, $context, $force_course_grades, $group=null, $page=null) {
         global $CFG, $USER, $DB;
        
-        if (empty($CFG->grade_report_transposicao_mid_dbname)) {
+        if (empty(academico::dbname())) {
             print_error('not_configured_contact_admin');
         }
 
@@ -454,10 +454,10 @@ class grade_report_transposicao extends grade_report {
     private function get_klass_from_actual_courseid() {
         global $CFG, $DB;
 
-        $mid_dbname = $CFG->grade_report_transposicao_mid_dbname;
+        $mid_dbname = academico::dbname();
         $shortname = $DB->get_field('course', 'shortname', array('id' => $this->courseid));
         $sql = "SELECT curso, disciplina, turma, periodo, modalidade
-                  FROM View_Geral_Turmas_OK
+                  FROM Geral_Turmas_OK
                  WHERE shortname = '{$shortname}'";
 
         if (!$this->klass = academico::get_record_sql($sql)) {
