@@ -24,9 +24,6 @@ if ($ADMIN->fulltree) {
                                                   0,
                                                   $scales_options));
 
-    $settings->add(new admin_setting_configtext('grade_report_transposicao_mid_dbname',
-                    get_string('mid_dbname_nome', 'gradereport_transposicao'),
-                    get_string('mid_dbname_msg', 'gradereport_transposicao'), 'middleware'));
 
     $settings->add(new admin_setting_configtext('grade_report_transposicao_cagr_host',
                     get_string('cagr_host_nome', 'gradereport_transposicao'),
