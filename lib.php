@@ -454,7 +454,6 @@ class grade_report_transposicao extends grade_report {
     private function get_klass_from_actual_courseid() {
         global $CFG, $DB;
 
-        $mid_dbname = academico::dbname();
         $shortname = $DB->get_field('course', 'shortname', array('id' => $this->courseid));
         $sql = "SELECT curso, disciplina, turma, periodo, modalidade
                   FROM Geral_Turmas_OK
