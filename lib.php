@@ -33,7 +33,8 @@ class grade_report_transposicao extends grade_report {
     function __construct($courseid, $gpr, $context, $force_course_grades, $group=null, $page=null) {
         global $CFG, $USER, $DB;
 
-        if (empty(academico::dbname())) {
+        $dbname = academico::dbname();
+        if (empty($dbname)) {
             print_error('not_configured_contact_admin');
         }
 
@@ -91,7 +92,12 @@ class grade_report_transposicao extends grade_report {
         }
 
         $this->pbarurl = 'index.php?id='.$this->courseid;
+
         $this->setup_groups($group);
+
+        if (!empty($this->group) && !is_null($this->group)) {
+            $this->cannot_submit = true;
+        }
     }
 
     function process_data($data){//TODO?
@@ -100,7 +106,7 @@ class grade_report_transposicao extends grade_report {
     function process_action($target, $action){//TODO?
     }
 
-    public function print() {
+    public function show() {
         $this->setup_table();
         $this->print_group_selector();
         $this->print_header();
@@ -110,14 +116,6 @@ class grade_report_transposicao extends grade_report {
 
     public function send_grades($grades, $mention, $fi) {
         $this->controle_academico->send_grades($grades, $mention, $fi);
-    }
-
-    private function setup_groups($group) {
-        parent::setup_groups();
-
-        if (!empty($this->group) && !is_null($this->group)) {
-            $this->cannot_submit = true;
-        }
     }
 
     private function setup_table() {

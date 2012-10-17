@@ -43,7 +43,7 @@ if (academico::get_record_sql($sql)) { // metacourse
     $gpr = new grade_plugin_return(array('type'=>'report', 'plugin'=>'grader', 'courseid'=>$courseid));// return tracking object
     $report = new grade_report_transposicao($courseid, $gpr, $context, $force_course_grades, $group, null);// Initialise the grader report object
 
-    $report->print();
+    $report->show();
 
 }
 echo $OUTPUT->footer();
