@@ -1,5 +1,4 @@
 <?php
-
 require_once('controle_academico.php');
 
 class TransposicaoCAGR extends ControleAcademico {
@@ -163,4 +162,3 @@ class TransposicaoCAGR extends ControleAcademico {
         return GRADE_DISPLAY_TYPE_REAL;
     }
 }
-?>

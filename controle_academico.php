@@ -23,7 +23,7 @@ class ControleAcademico {
         $this->db = ADONewConnection('sybase');
         $this->db->charSet = 'cp850';
         try{
-            $this->db->Connect($CFG->grade_report_transposicao_cagr_host, $CFG->grade_report_transposicao_cagr_user, 
+            $this->db->Connect($CFG->grade_report_transposicao_cagr_host, $CFG->grade_report_transposicao_cagr_user,
                 $CFG->grade_report_transposicao_cagr_pass, $database);
 
         }catch(Exception $e){

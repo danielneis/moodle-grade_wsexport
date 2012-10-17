@@ -1,75 +1,11 @@
-<?php
+    <?php
 require_once($CFG->dirroot.'/grade/report/lib.php');
 require_once($CFG->dirroot.'/grade/report/transposicao/weblib.php');
 require_once($CFG->libdir.'/tablelib.php');
 
-//true se curso for metacurso
-
-
-function is_metacourse($courseid){
-    global $CFG;
-
-    $sql = "SELECT DISTINCT cm.id
-             FROM {$CFG->dbname}.{$CFG->prefix}course cm
-             JOIN {$CFG->dbname}.{$CFG->prefix}enrol e
-               ON (e.courseid = cm.id AND
-                   e.enrol = 'meta')
-            WHERE cm.id = {$courseid}";
-    return academico::get_record_sql($sql);
-}
-
-function turmas_de_um_metacurso($id_metacurso) {
-    global $CFG;
-
-    $sql = "SELECT DISTINCT e.customint1 as id, filha.fullname
-                       FROM {$CFG->dbname}.{$CFG->prefix}course c
-                       JOIN {$CFG->dbname}.{$CFG->prefix}enrol e
-                         ON (e.courseid = c.id)
-                       JOIN {$CFG->dbname}.{$CFG->prefix}course filha
-                         ON (e.customint1 = filha.id)
-                      WHERE e.enrol = 'meta'
-                        AND c.id = {$id_metacurso}";
-    return academico::get_records_sql($sql);
-}
-
-function lista_turmas_afiliadas($courseid){
-    global $OUTPUT, $CFG;
-    echo $OUTPUT->box_start('generalbox block_cagr_centralizado');
-    echo get_string('is_metacourse_error','gradereport_transposicao');
-    echo $OUTPUT->box_end();
-
-    $turmas = turmas_de_um_metacurso($courseid);
-    $turmas_professor = array();
-    $turmas_outros = array();
-
-    foreach($turmas as $t){
-        $context = get_context_instance(CONTEXT_COURSE, $t->id);
-
-        if(has_capability('gradereport/transposicao:view', $context)){
-            $turmas_professor[] = "<a href='{$CFG->wwwroot}/grade/report/transposicao/index.php?id={$t->id}' target='_blank'> {$t->fullname} </a>";
-        }else{
-            $turmas_outros[] = $t->fullname;
-        }
-    }
-    if(!empty($turmas_professor)){
-        echo "<br/><br/><h3>" . get_string('turmas_prof', 'gradereport_transposicao') . '</h3><ul>';
-        foreach($turmas_professor as $t){
-            echo "<li>{$t}</li>";
-        }
-        echo '</ul>';
-    }
-    if(!empty($turmas_outros)){
-        echo "<br/><br/><h3>" . get_string('turmas_outros', 'gradereport_transposicao') . '</h3><ul>';
-        foreach($turmas_outros as $t){
-            echo "<li>{$t}</li>";
-        }
-        echo '</ul>';
-    }
-}
-
 class grade_report_transposicao extends grade_report {
 
-    private $klass; // um registro (curso, disciplina, turma, periodo) da tabela Turmas - inicializado em get_klass_from_actual_courseid()
+    private $klass; // um registro (curso, disciplina, turma, periodo) da tabela Turmas - inicializado em get_class_from_middleware
     private $moodle_students = array(); // um array com os alunos vindos do moodle - inicializado em fill_table()
     private $moodle_grades = array(); // um array com as notas dos alunos do moodle - inicializado em get_moodle_grades()
     private $not_in_cagr_students = array(); // um array com os alunos do moodle que nao estao no cagr - inicializado em fill_ok_table()
@@ -94,10 +30,9 @@ class grade_report_transposicao extends grade_report {
 
     private $group = null; //if not selected group
 
-
     function __construct($courseid, $gpr, $context, $force_course_grades, $group=null, $page=null) {
         global $CFG, $USER, $DB;
-       
+
         if (empty(academico::dbname())) {
             print_error('not_configured_contact_admin');
         }
@@ -118,24 +53,33 @@ class grade_report_transposicao extends grade_report {
                                                 $context, false, '', 'u.firstname, u.lastname', null, $this->group);
 
         $this->get_course_grade_item($force_course_grades);
-        $this->get_klass_from_actual_courseid();
+        $this->get_class_from_middleware();
 
         if ($this->klass->modalidade == 'GR') {
+
             require_once('cagr.php');
             $this->controle_academico = new TransposicaoCAGR($this->klass, $this->courseid);
+
         } else if (in_array($this->klass->modalidade, array('ES', 'ME', 'MP', 'DO'))) {
+
             require_once('capg.php');
             $this->controle_academico = new TransposicaoCAPG($this->klass, $this->courseid);
+
         } else {
             print_error('modalidade_not_grad_nor_pos', 'gradereport_transposicao');
         }
 
         $this->get_moodle_grades();
-
-        $this->is_grades_in_history      = $this->controle_academico->is_grades_in_history();
         $this->controle_academico_grades = $this->controle_academico->get_grades();
 
-        $this->in_submission_date_range  = $this->controle_academico->in_submission_date_range();
+        $this->is_grades_in_history = $this->controle_academico->is_grades_in_history();
+
+        if ($this->is_grades_in_history == true) {
+            $this->cannot_submit = true;
+        }
+
+        $this->in_submission_date_range = $this->controle_academico->in_submission_date_range();
+
         if (!$this->in_submission_date_range) {
             $this->cannot_submit = true;
         }
@@ -146,23 +90,29 @@ class grade_report_transposicao extends grade_report {
             $this->cannot_submit = true;
         }
 
-        if ($this->is_grades_in_history == true) {
-            $this->cannot_submit = true;
-        }
-
         $this->pbarurl = 'index.php?id='.$this->courseid;
         $this->setup_groups($group);
     }
 
     function process_data($data){//TODO?
-
     }
 
     function process_action($target, $action){//TODO?
-
     }
 
-    function setup_groups($group) {
+    public function print() {
+        $this->setup_table();
+        $this->print_group_selector();
+        $this->print_header();
+        $this->print_tables();
+        $this->print_footer();
+    }
+
+    public function send_grades($grades, $mention, $fi) {
+        $this->controle_academico->send_grades($grades, $mention, $fi);
+    }
+
+    private function setup_groups($group) {
         parent::setup_groups();
 
         if (!empty($this->group) && !is_null($this->group)) {
@@ -170,13 +120,13 @@ class grade_report_transposicao extends grade_report {
         }
     }
 
-    function setup_table() {
+    private function setup_table() {
         $this->setup_ok_table();
         $this->setup_not_in_cagr_table();
         $this->setup_not_in_moodle_table();
     }
 
-    function print_header() {
+    private function print_header() {
         $this->msg_submission_dates();
         $this->msg_unformatted_grades();
         $this->msg_grade_in_history();
@@ -186,11 +136,11 @@ class grade_report_transposicao extends grade_report {
         echo "<form method=\"post\" action=\"confirm.php?id={$this->courseid}\">";
     }
 
-    function print_group_selector() {
+    private function print_group_selector() {
         echo $this->group_selector . '<br>';
     }
 
-    function print_tables() {
+    private function print_tables() {
         //funções "fill_" devem ser chamadas nesta ordem
         $rows_ok = $this->fill_ok_table();
         $rows_not_in_moodle = $this->fill_not_in_moodle_table();
@@ -207,7 +157,7 @@ class grade_report_transposicao extends grade_report {
         ob_end_flush();
     }
 
-    function print_table_not_in_moodle($rows){
+    private function print_table_not_in_moodle($rows) {
         if(!empty($rows) && ($this->statistics['not_in_moodle']  > 0)){
             echo '<h2 class="table_title">',
                  get_string('students_not_in_moodle', 'gradereport_transposicao'),
@@ -221,7 +171,7 @@ class grade_report_transposicao extends grade_report {
         }
     }
 
-    function print_table_not_in_cagr($rows){
+    private function print_table_not_in_cagr($rows) {
         if (!empty($rows) && $this->statistics['not_in_cagr'] > 0) {
             echo '<h2 class="table_title">',
                  get_string('students_not_in_cagr', 'gradereport_transposicao'),
@@ -235,7 +185,7 @@ class grade_report_transposicao extends grade_report {
         }
     }
 
-    function print_ok_table($rows){
+    private function print_ok_table($rows) {
         if(!empty($rows)){//improvável: se for vazio já lançou exceção
             echo '<h2 class="table_title">', get_string('students_ok', 'gradereport_transposicao');
             if ($this->statistics['ok'] > 0) {
@@ -249,9 +199,7 @@ class grade_report_transposicao extends grade_report {
         }
     }
 
-
-
-    function print_footer() {
+    private function print_footer() {
         echo '<div class="report_footer">';
         $this->msg_submission_dates();
         $this->msg_unformatted_grades();
@@ -265,10 +213,6 @@ class grade_report_transposicao extends grade_report {
 
         echo '<input type="submit" value="',$str_submit_button , '" ', $dis,' />',
              '</div></form>';
-    }
-
-    function send_grades($grades, $mention, $fi) {
-        $this->controle_academico->send_grades($grades, $mention, $fi);
     }
 
     private function get_course_grade_item($force_course_grades = false) {
@@ -381,11 +325,11 @@ class grade_report_transposicao extends grade_report {
                 // montando a linha da tabela
                 $row = array(fullname($student),
                              $grade_in_moodle,
-                             get_checkbox("mention[{$student->username}]", $has_mencao_i, $this->cannot_submit)
+                             get_checkbox("mentions[{$student->username}]", $has_mencao_i, $this->cannot_submit)
                             );
 
                 if ($this->show_fi) {
-                    $row[] = get_checkbox("fi[{$student->username}]", $has_fi, $this->cannot_submit);
+                    $row[] = get_checkbox("fis[{$student->username}]", $has_fi, $this->cannot_submit);
                 }
 
                 $row = array_merge($row, array($grade_in_cagr_formatted, $sent_date, $alert));
@@ -414,10 +358,10 @@ class grade_report_transposicao extends grade_report {
 
                 $row = array($student['nome'] . ' (' . $matricula . ')',
                              '', // the moodle grade doesn't exist
-                             get_checkbox("mention[]", $has_mencao_i, $this->cannot_submit));
+                             get_checkbox("mentions[]", $has_mencao_i, $this->cannot_submit));
 
                 if ($this->show_fi) {
-                    $row[] = get_checkbox("fi[{$matricula}]", $student['frequencia'] == 'FI', true);
+                    $row[] = get_checkbox("fis[{$matricula}]", $student['frequencia'] == 'FI', true);
                 }
 
                 if (empty($student['nota'])) {
@@ -440,10 +384,10 @@ class grade_report_transposicao extends grade_report {
 
             $row = array(fullname($student),
                          $this->moodle_grades[$student->id],
-                         get_checkbox("mention[]", '', true));
+                         get_checkbox("mentions[]", '', true));
 
             if ($this->show_fi) {
-                $row[] = get_checkbox("fi[{$student->username}]", false, true);
+                $row[] = get_checkbox("fis[{$student->username}]", false, true);
             }
 
             $rows[] = $row;
@@ -451,12 +395,12 @@ class grade_report_transposicao extends grade_report {
         return !empty($rows) ? $rows : true; //ok se for vazio
     }
 
-    private function get_klass_from_actual_courseid() {
+    private function get_class_from_middleware() {
         global $CFG, $DB;
 
         $shortname = $DB->get_field('course', 'shortname', array('id' => $this->courseid));
         $sql = "SELECT curso, disciplina, turma, periodo, modalidade
-                  FROM Geral_Turmas_OK
+                  FROM {view_Geral_Turmas_OK}
                  WHERE shortname = '{$shortname}'";
 
         if (!$this->klass = academico::get_record_sql($sql)) {
@@ -477,7 +421,6 @@ class grade_report_transposicao extends grade_report {
         }
         return array($i, $grade);
     }
-
 
     private function setup_not_in_cagr_table() {
 
@@ -583,24 +526,18 @@ class grade_report_transposicao extends grade_report {
     }
 
     private function msg_unformatted_grades() {
-        echo '<p class="warning prevent">',
-             get_string($this->grades_format_status, 'gradereport_transposicao'),
-             '</p>';
+        echo '<p class="warning prevent">', get_string($this->grades_format_status, 'gradereport_transposicao'), '</p>';
     }
 
     private function msg_grade_in_history() {
         if ($this->is_grades_in_history) {
-            echo '<p class="warning prevent">',
-                 get_string('grades_in_history', 'gradereport_transposicao'),
-                 '</p>';
+            echo '<p class="warning prevent">', get_string('grades_in_history', 'gradereport_transposicao'), '</p>';
         }
     }
 
     private function msg_grade_updated_on_cagr() {
         if ($this->statistics['updated_on_cagr'] > 0) {
-            echo '<p class="warning">',
-                 get_string('grades_updated_on_cagr', 'gradereport_transposicao'),
-                 '</p>';
+            echo '<p class="warning">', get_string('grades_updated_on_cagr', 'gradereport_transposicao'), '</p>';
         }
     }
 
@@ -609,8 +546,7 @@ class grade_report_transposicao extends grade_report {
         $status     = $this->controle_academico->submission_date_status();
         $date_range =  $this->controle_academico->get_submission_date_range();
         $class = '';
-        if (($status != 'send_date_ok_cagr') &&
-            ($status != 'send_date_ok_capg')) {
+        if (($status != 'send_date_ok_cagr') && ($status != 'send_date_ok_capg')) {
             $class =  'warning prevent';
         }
 
@@ -649,24 +585,17 @@ class grade_report_transposicao extends grade_report {
         global $DB, $CFG;
 
         $sql = "SELECT cm.id
-                 FROM {$CFG->dbname}.{$CFG->prefix}course c 
+                 FROM {$CFG->dbname}.{$CFG->prefix}course c
                  JOIN {$CFG->dbname}.{$CFG->prefix}enrol e
                    ON (e.customint1 = c.id)
                  JOIN {$CFG->dbname}.{$CFG->prefix}course cm
                    ON (cm.id = e.courseid)
                 WHERE e.enrol = 'meta'
                   AND c.id = {$this->courseid}";
-        if($course = academico::get_record_sql($sql)) {
+        if ($course = academico::get_record_sql($sql)) {
             return $course->id;
         } else {
             return false;
         }
     }
-
-
 }
-
-
-
-
-?>

@@ -1,5 +1,4 @@
 <?php
-
 require_once('controle_academico.php');
 
 class TransposicaoCAPG extends ControleAcademico {
@@ -153,4 +152,3 @@ class TransposicaoCAPG extends ControleAcademico {
         return GRADE_DISPLAY_TYPE_LETTER;
     }
 }
-?>
