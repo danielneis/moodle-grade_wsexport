@@ -37,7 +37,6 @@ class TransposicaoCAGR extends ControleAcademico {
     }
 
     function in_submission_date_range() {
-
         $range = $this->get_submission_date_range();
         $now   = time();
         $start = explode('/', $range->dtInicial);
@@ -64,7 +63,6 @@ class TransposicaoCAGR extends ControleAcademico {
     }
 
     function get_grades() {
-
         $sql = "SELECT matricula, nome, nota, mencao, frequencia, usuario, dataAtualizacao
                   FROM vi_moodleEspelhoMatricula
                  WHERE periodo = {$this->klass->periodo}
@@ -75,7 +73,7 @@ class TransposicaoCAGR extends ControleAcademico {
         return $result->GetAssoc();
     }
 
-    function send_grades($grades, $mention, $fi) {
+    function send_grades($grades, $mentions, $fis) {
         global $USER;
 
         $this->send_results = array();
@@ -83,14 +81,14 @@ class TransposicaoCAGR extends ControleAcademico {
 
         foreach ($grades as $matricula => $grade) {
 
-            if (isset($mention[$matricula])) {
+            if (isset($mentions[$matricula])) {
                 $i = "'I'";
                 $grade = 'NULL';
             } else {
                 $i = 'NULL';
             }
 
-            if (isset($fi[$matricula])) {
+            if (isset($fis[$matricula])) {
                 $f = 'FI';
                 if ($grade != 'NULL') $grade = '0';
             } else {
@@ -120,7 +118,6 @@ class TransposicaoCAGR extends ControleAcademico {
     }
 
     function is_grades_in_history() {
-
         $sql = "EXEC sp_NotasMoodle {$this->sp_params['logs']},
             {$this->klass->periodo}, '{$this->klass->disciplina}', '{$this->klass->turma}'";
 
@@ -142,17 +139,34 @@ class TransposicaoCAGR extends ControleAcademico {
     }
 
     function grades_format_status($grades, $course_grade_item) {
+        global $DB, $CFG;
+
+        if ($course_grade_item->gradetype != GRADE_TYPE_VALUE) {
+            return 'invalid_grade_item_cagr';
+        }
+        if ($course_grade_item->display == 0) {
+            // o displaytype do item não foi definido, então temos que pegar o displaytype do curso
+            if(!$display = $DB->get_field('grade_settings', 'value', array('courseid' => $course_grade_item->courseid, 'name' => 'displaytype'))) {
+                $display = $CFG->grade_displaytype;
+            }
+        } else {
+            $display = $course_grade_item->display;
+        }
+        if($display != GRADE_DISPLAY_TYPE_REAL) {
+            return 'invalid_grade_item_cagr';
+        }
+        if($course_grade_item->grademax != 10 || $course_grade_item->grademin != 0) {
+            return 'invalid_grade_item_cagr';
+        }
 
         $unformatted_grades = 0;
         foreach ($grades as $userid => $grade) {
+            $grade = str_replace(',', '.', $grade);
             if (is_numeric($grade)) {
-                $decimal_value = explode('.', $grade);
-                $decimal_value = $decimal_value[1];
-            } else {
-                $decimal_value = 0;
-            }
-            if ( ($grade > 10) || (($decimal_value != 0) && ($decimal_value != 5))) {
-                return 'unformatted_grades_cagr';
+                $decimal_value = $grade - (int)$grade;
+                if ($decimal_value != 0 && $decimal_value != 0.5) {
+                    return 'unformatted_grades_cagr';
+                }
             }
         }
         return 'all_grades_formatted';

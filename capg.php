@@ -30,7 +30,6 @@ class TransposicaoCAPG extends ControleAcademico {
     }
 
     function in_submission_date_range() {
-
         if ($this->klass->ano < $this->get_submission_date_range()) {
             $this->submission_date_status  = 'send_date_not_in_period_capg';
             return false;
@@ -44,13 +43,12 @@ class TransposicaoCAPG extends ControleAcademico {
     }
 
     function get_grades() {
-
         $sql = "SELECT convert(char(9),alu.nu_matric_alu) as matricula,
                        ltrim(sel.nm_aluno_sel) as nome,
                        cd_concei_cto as nota,
                        '' as mencao,
                        '' as usuario,
-                       dt_atualizacao_mat as dataAtualizacao,
+                       convert(char(20), dt_atualizacao_mat, 100) as dataAtualizacao,
                        cd_frequencia_mat  as frequencia
                   FROM capg..vi_alu alu
                   JOIN capg..vi_mat mat
@@ -68,14 +66,14 @@ class TransposicaoCAPG extends ControleAcademico {
         return $this->db->GetAssoc($sql);
     }
 
-    function send_grades($grades, $mention, $fi) {
+    function send_grades($grades, $mentions, $fis) {
         global $USER;
 
         $msgs = array();
         $this->send_results = array();
         foreach ($grades as $matricula => $grade) {
 
-            if (isset($fi[$matricula])) {
+            if (isset($fis[$matricula])) {
                 $f = 'I';
                 if ($grade != 'NULL') $grade = '0';
             } else {
@@ -110,7 +108,6 @@ class TransposicaoCAPG extends ControleAcademico {
         global $CFG, $DB;
 
         if ($course_grade_item->gradetype == GRADE_TYPE_VALUE) {
-
             if ($course_grade_item->display == 0) {
                 // o displaytype do item não foi definido, então temos que pegar o displaytype do curso
                 $display = $DB->get_field('grade_settings', 'value', array('courseid' => $course_grade_item->courseid, 'name' => 'displaytype'));
@@ -127,23 +124,18 @@ class TransposicaoCAPG extends ControleAcademico {
             // devemos verificar se elas são as mesmas definidas no site
             $course_letters = grade_get_letters(get_context_instance(CONTEXT_COURSE, $course_grade_item->courseid));
             $site_letters = grade_get_letters(get_context_instance(CONTEXT_SYSTEM));
-
             if (array_values($site_letters) != array_values($course_letters)) {
                 return 'unformatted_grades_capg_invalid_letters';
             }
-
         } else if ($course_grade_item->gradetype == GRADE_TYPE_SCALE)  {
-
-            if (!isset($CFG->grade_report_transposicao_escala_pg) ||
-                $CFG->grade_report_transposicao_escala_pg == 0) {
+            if (!isset($CFG->grade_report_transposicao_escala_pg) || $CFG->grade_report_transposicao_escala_pg == 0) {
                 print_error("escala_pg_nao_definida");
             }
-            $pg_scale = new grade_scale(array('id' => $CFG->grade_report_transposicao_escala_pg));
-            $course_scale = new grade_scale(array('id' => $course_grade_item->scaleid));
-
-            if ($pg_scale->scale != $course_scale->scale) {
+            if ($course_grade_item->scaleid != $CFG->grade_report_transposicao_escala_pg) {
                 return 'unformatted_grades_capg_invalid_scale';
             }
+        } else {
+            return 'unknown_gradetype';
         }
         return 'all_grades_formatted';
     }

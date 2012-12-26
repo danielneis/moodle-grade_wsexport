@@ -1,13 +1,16 @@
-    <?php
+<?php
 require_once($CFG->dirroot.'/grade/report/lib.php');
 require_once($CFG->dirroot.'/grade/report/transposicao/weblib.php');
 require_once($CFG->libdir.'/tablelib.php');
+
+require_once($CFG->dirroot.'/local/academico/lib.php');
 
 class grade_report_transposicao extends grade_report {
 
     private $klass; // um registro (curso, disciplina, turma, periodo) da tabela Turmas - inicializado em get_class_from_middleware
     private $moodle_students = array(); // um array com os alunos vindos do moodle - inicializado em fill_table()
     private $moodle_grades = array(); // um array com as notas dos alunos do moodle - inicializado em get_moodle_grades()
+    private $grades_to_send = array(); // um array com as notas dos alunos do moodle a serem enviadas para o CAGR/CAPG - inicializado em get_moodle_grades()
     private $not_in_cagr_students = array(); // um array com os alunos do moodle que nao estao no cagr - inicializado em fill_ok_table()
 
     // um array com as contagens de alunos por problema
@@ -114,8 +117,8 @@ class grade_report_transposicao extends grade_report {
         $this->print_footer();
     }
 
-    public function send_grades($grades, $mention, $fi) {
-        $this->controle_academico->send_grades($grades, $mention, $fi);
+    public function send_grades($grades, $mentions, $fis) {
+        $this->controle_academico->send_grades($grades, $mentions, $fis);
     }
 
     private function setup_table() {
@@ -208,7 +211,6 @@ class grade_report_transposicao extends grade_report {
 
         $str_submit_button = get_string('submit_button', 'gradereport_transposicao');
         $dis = ($this->cannot_submit == true) ? 'disabled="disabled"' : '';
-
         echo '<input type="submit" value="',$str_submit_button , '" ', $dis,' />',
              '</div></form>';
     }
@@ -231,29 +233,49 @@ class grade_report_transposicao extends grade_report {
     }
 
     private function get_moodle_grades() {
-        global $DB;
+        global $DB, $CFG;
 
         $grades = $DB->get_records('grade_grades', array('itemid' => $this->course_grade_item->id), 'userid', 'userid, finalgrade');
+        if(!is_array($grades)) {
+            $grades = array();
+        }
+
         $this->moodle_grades = array();
         $this->grades_to_send = array();
-        if (is_array($grades)) {
+
+        if ($this->course_grade_item->gradetype == GRADE_TYPE_SCALE) {
+            $pg_scale = new grade_scale(array('id' => $CFG->grade_report_transposicao_escala_pg));
+            $scale_items = $pg_scale->load_items();
+            foreach ($this->moodle_students as $st)  {
+                if (isset($grades[$st->id])) {
+                    $fg = (int)$grades[$st->id]->finalgrade;
+                    if(isset($scale_items[$fg-1])) {
+                        $this->moodle_grades[$st->id] = $scale_items[$fg-1];
+                        $this->grades_to_send[$st->id] = substr($scale_items[$fg-1], 0, 1);
+                    } else {
+                        $this->moodle_grades[$st->id] = null;
+                        $this->grades_to_send[$st->id] = 'E';
+                    }
+                } else {
+                    $this->moodle_grades[$st->id] = null;
+                    $this->grades_to_send[$st->id] = 'E';
+                }
+            }
+        } else {
             foreach ($this->moodle_students as $st)  {
                 if (isset($grades[$st->id])) {
                     $this->moodle_grades[$st->id] = grade_format_gradevalue($grades[$st->id]->finalgrade,
-                                                                            $this->course_grade_item, true,
-                                                                            $this->course_grade_item->get_displaytype(), null);
+                                                                        $this->course_grade_item, true,
+                                                                        $this->course_grade_item->get_displaytype(), null);
                     $this->grades_to_send[$st->id] = grade_format_gradevalue($grades[$st->id]->finalgrade,
-                                                                            $this->course_grade_item, false,
-                                                                            $this->controle_academico->get_displaytype(), null);
+                                                                        $this->course_grade_item, false,
+                                                                        $this->controle_academico->get_displaytype(), null);
                 } else {
                     $this->moodle_grades[$st->id] = null;
-                    $this->grades_to_send[$st->id] = null;
+                    $this->grades_to_send[$st->id] = grade_format_gradevalue(0,
+                                                                        $this->course_grade_item, false,
+                                                                        $this->controle_academico->get_displaytype(), null);
                 }
-            }
-        } else if (is_array($this->moodle_students)) {
-            foreach ($this->moodle_students as $st)  {
-                $this->moodle_grades[$st->id] = null;
-                $this->grades_to_send[$st->id] = null;
             }
         }
     }
@@ -286,8 +308,11 @@ class grade_report_transposicao extends grade_report {
                 if (empty($current_student['nota']) && $current_student['nota'] != '0') {
                     $sent_date = get_string('never_sent', 'gradereport_transposicao');
                 } else {
-
-                    $sent_date = date($this->data_format, strtotime($current_student['dataAtualizacao']));
+                    if (empty($current_student['dataAtualizacao'])) {
+                        $sent_date = get_string('never_sent', 'gradereport_transposicao');
+                    } else {
+                        $sent_date = date($this->data_format, strtotime($current_student['dataAtualizacao']));
+                    }
 
                     if (!$this->is_grades_in_history && !empty($usuario) && $usuario != strtolower($CFG->grade_report_transposicao_cagr_user)) {
 
@@ -299,8 +324,7 @@ class grade_report_transposicao extends grade_report {
                     }
                 }
                 if (is_null($student->moodle_grade)) {
-                    $alert .='<p class="null_grade">'.get_string('warning_null_grade', 'gradereport_transposicao').'</p>';
-                    $this->grades_to_send[$student->id] = 0;
+                    $alert .='<p class="null_grade">'.get_string('warning_null_grade', 'gradereport_transposicao', $this->grades_to_send[$student->id]).'</p>';
                 }
 
                 $grade_hidden =  '<input type="hidden" name="grades['.$student->username.']" value="'.$this->grades_to_send[$student->id].'"/>';
@@ -362,7 +386,7 @@ class grade_report_transposicao extends grade_report {
                     $row[] = get_checkbox("fis[{$matricula}]", $student['frequencia'] == 'FI', true);
                 }
 
-                if (empty($student['nota'])) {
+                if (empty($student['nota']) || empty($student['dataAtualizacao'])) {
                     $sent_date = get_string('never_sent', 'gradereport_transposicao');
                 } else {
                     $sent_date = date($this->data_format, strtotime($student['dataAtualizacao']));
@@ -398,9 +422,8 @@ class grade_report_transposicao extends grade_report {
 
         $shortname = $DB->get_field('course', 'shortname', array('id' => $this->courseid));
         $sql = "SELECT curso, disciplina, turma, periodo, modalidade
-                  FROM {view_Geral_Turmas_OK}
+                  FROM {geral_Turmas_OK}
                  WHERE shortname = '{$shortname}'";
-
         if (!$this->klass = academico::get_record_sql($sql)) {
             print_error('class_not_in_middleware', 'gradereport_transposicao');
         }
@@ -548,11 +571,7 @@ class grade_report_transposicao extends grade_report {
             $class =  'warning prevent';
         }
 
-        if ($this->controle_academico->get_system() == 'capg') {
-            echo '<p class="grade_range ', $class, '">', get_string($status, 'gradereport_transposicao',$date_range), '</p>';
-        } else {
-            echo '<p class="grade_range ', $class, '">',get_string('cagr_dates', 'gradereport_transposicao', $date_range),'</p>';
-        }
+        echo '<p class="grade_range ', $class, '">', get_string($status, 'gradereport_transposicao',$date_range), '</p>';
     }
 
     private function msg_groups() {

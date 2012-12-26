@@ -20,7 +20,7 @@ function lista_turmas_afiliadas($courseid){
                        JOIN {course} filha
                          ON (e.customint1 = filha.id)
                       WHERE e.enrol = 'meta'
-                        AND c.id = {$id_metacurso}";
+                        AND c.id = {$courseid}";
     $turmas = academico::get_records_sql($sql);
 
     $turmas_professor = array();
