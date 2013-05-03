@@ -38,7 +38,8 @@ class grade_report_transposicao extends grade_report {
 
         $dbname = academico::dbname();
         if (empty($dbname)) {
-            print_error('not_configured_contact_admin');
+            $url = "{$CFG->wwwroot}/grade/report/grader/index.php?id={$courseid}";
+            print_error('not_configured_contact_admin', $url);
         }
 
         parent::__construct($courseid, $gpr, $context, $page);
@@ -70,7 +71,8 @@ class grade_report_transposicao extends grade_report {
             $this->controle_academico = new TransposicaoCAPG($this->klass, $this->courseid);
 
         } else {
-            print_error('modalidade_not_grad_nor_pos', 'gradereport_transposicao');
+            $url = "{$CFG->wwwroot}/grade/report/grader/index.php?id={$this->courseid}";
+            print_error('modalidade_not_grad_nor_pos', 'gradereport_transposicao', $url);
         }
 
         $this->get_moodle_grades();
@@ -142,13 +144,16 @@ class grade_report_transposicao extends grade_report {
     }
 
     private function print_tables() {
+        global $CFG;
+
         //funções "fill_" devem ser chamadas nesta ordem
         $rows_ok = $this->fill_ok_table();
         $rows_not_in_moodle = $this->fill_not_in_moodle_table();
         $rows_not_in_cagr = $this->fill_not_in_cagr_table();
 
         if(!($rows_ok && $rows_not_in_moodle && $rows_not_in_cagr)){
-            print_error('cannot_populate_tables', 'gradereport_transposicao');
+            $url = "{$CFG->wwwroot}/grade/report/grader/index.php?id={$this->courseid}";
+            print_error('cannot_populate_tables', 'gradereport_transposicao', $url);
         }
 
         ob_start();
@@ -263,7 +268,7 @@ class grade_report_transposicao extends grade_report {
             }
         } else {
             foreach ($this->moodle_students as $st)  {
-                if (isset($grades[$st->id])) {
+                if (isset($grades[$st->id]) && $grades[$st->id]->finalgrade != null) {
                     $this->moodle_grades[$st->id] = grade_format_gradevalue($grades[$st->id]->finalgrade,
                                                                         $this->course_grade_item, true,
                                                                         $this->course_grade_item->get_displaytype(), null);
@@ -271,7 +276,9 @@ class grade_report_transposicao extends grade_report {
                                                                         $this->course_grade_item, false,
                                                                         $this->controle_academico->get_displaytype(), null);
                 } else {
-                    $this->moodle_grades[$st->id] = null;
+                    $this->moodle_grades[$st->id] = grade_format_gradevalue(null,
+                                                                        $this->course_grade_item, true,
+                                                                        $this->course_grade_item->get_displaytype(), null);
                     $this->grades_to_send[$st->id] = grade_format_gradevalue(0,
                                                                         $this->course_grade_item, false,
                                                                         $this->controle_academico->get_displaytype(), null);
@@ -323,7 +330,7 @@ class grade_report_transposicao extends grade_report {
                         $grade_on_cagr_hidden = '<input type="hidden" name="grades_cagr['.$student->username.']" value="1"/>';
                     }
                 }
-                if (is_null($student->moodle_grade)) {
+                if (is_null($student->moodle_grade) || $student->moodle_grade == '-') {
                     $alert .='<p class="null_grade">'.get_string('warning_null_grade', 'gradereport_transposicao', $this->grades_to_send[$student->id]).'</p>';
                 }
 
@@ -425,7 +432,8 @@ class grade_report_transposicao extends grade_report {
                   FROM {geral_Turmas_OK}
                  WHERE shortname = '{$shortname}'";
         if (!$this->klass = academico::get_record_sql($sql)) {
-            print_error('class_not_in_middleware', 'gradereport_transposicao');
+            $url = "{$CFG->wwwroot}/grade/report/grader/index.php?id={$this->courseid}";
+            print_error('class_not_in_middleware', 'gradereport_transposicao', $url);
         }
     }
 
@@ -547,7 +555,10 @@ class grade_report_transposicao extends grade_report {
     }
 
     private function msg_unformatted_grades() {
-        echo '<p class="warning prevent">', get_string($this->grades_format_status, 'gradereport_transposicao'), '</p>';
+        global $CFG;
+
+        $url = "{$CFG->wwwroot}/grade/edit/tree/category.php?courseid={$this->course_grade_item->courseid}&id={$this->course_grade_item->iteminstance}";
+        echo '<p class="error prevent">', get_string($this->grades_format_status, 'gradereport_transposicao', $url), '</p>';
     }
 
     private function msg_grade_in_history() {

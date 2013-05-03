@@ -166,7 +166,11 @@ class TransposicaoCAGR extends ControleAcademico {
                 $decimal_value = $grade - (int)$grade;
                 if ($decimal_value != 0 && $decimal_value != 0.5) {
                     return 'unformatted_grades_cagr';
+                } else if ($grade < 0 || $grade > 10) {
+                    return 'unformatted_grades_cagr';
                 }
+            } else if($grade != '-') {
+                return 'unformatted_grades_cagr';
             }
         }
         return 'all_grades_formatted';
