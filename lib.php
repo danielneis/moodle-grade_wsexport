@@ -20,6 +20,7 @@ class grade_report_transposicao extends grade_report {
     private $send_results = array(); // um array (matricula => msg) com as msgs de erro de envio de notas
 
     private $show_fi = null; // from CFG, if must show the 'FI' column
+    private $show_mencaoI = null;
 
     private $is_grades_in_history = false; // if the grades were already in student's history
     private $cannot_submit = false; // if there is something preventing grades sending, set it to true
@@ -64,11 +65,13 @@ class grade_report_transposicao extends grade_report {
 
             require_once('cagr.php');
             $this->controle_academico = new TransposicaoCAGR($this->klass, $this->courseid);
+            $this->show_mencaoI = true;
 
         } else if (in_array($this->klass->modalidade, array('ES', 'ME', 'MP', 'DO'))) {
 
             require_once('capg.php');
             $this->controle_academico = new TransposicaoCAPG($this->klass, $this->courseid);
+            $this->show_mencaoI = false;
 
         } else {
             $url = "{$CFG->wwwroot}/grade/report/grader/index.php?id={$this->courseid}";
@@ -353,10 +356,12 @@ class grade_report_transposicao extends grade_report {
 
                 // montando a linha da tabela
                 $row = array(fullname($student),
-                             $grade_in_moodle,
-                             get_checkbox("mentions[{$student->username}]", $has_mencao_i, $this->cannot_submit)
+                             $grade_in_moodle
                             );
 
+                if ($this->show_mencaoI) {
+                    $row[] = get_checkbox("mentions[{$student->username}]", $has_mencao_i, $this->cannot_submit);
+                }
                 if ($this->show_fi) {
                     $row[] = get_checkbox("fis[{$student->username}]", $has_fi, $this->cannot_submit);
                 }
@@ -386,9 +391,11 @@ class grade_report_transposicao extends grade_report {
                 list($has_mencao_i, $grade_in_cagr) = $this->get_grade_and_mencao_i($student);
 
                 $row = array($student['nome'] . ' (' . $matricula . ')',
-                             '', // the moodle grade doesn't exist
-                             get_checkbox("mentions[]", $has_mencao_i, $this->cannot_submit));
+                             ''); // the moodle grade doesn't exist
 
+                if ($this->show_mencaoI) {
+                    $row[] = get_checkbox("mentions[]", $has_mencao_i, $this->cannot_submit);
+                }
                 if ($this->show_fi) {
                     $row[] = get_checkbox("fis[{$matricula}]", $student['frequencia'] == 'FI', true);
                 }
@@ -412,9 +419,11 @@ class grade_report_transposicao extends grade_report {
         foreach ($this->not_in_cagr_students as $student) {
 
             $row = array(fullname($student),
-                         $this->moodle_grades[$student->id],
-                         get_checkbox("mentions[]", '', true));
+                         $this->moodle_grades[$student->id]);
 
+            if ($this->show_mencaoI) {
+                $row[] = get_checkbox("mentions[]", '', true);
+            }
             if ($this->show_fi) {
                 $row[] = get_checkbox("fis[{$student->username}]", false, true);
             }
@@ -518,10 +527,12 @@ class grade_report_transposicao extends grade_report {
     private function get_table_headers() {
 
         $h = array(get_string('name'),
-                   get_string('moodle_grade', 'gradereport_transposicao'),
-                   get_string('mention', 'gradereport_transposicao')
+                   get_string('moodle_grade', 'gradereport_transposicao')
                   );
 
+        if ($this->show_mencaoI) {
+            $h[] = get_string('mention', 'gradereport_transposicao');
+        }
         if ($this->show_fi) {
             $h[] = get_string('fi', 'gradereport_transposicao');
         }
@@ -534,7 +545,10 @@ class grade_report_transposicao extends grade_report {
     }
 
     private function get_table_columns() {
-        $c = array('name', 'grade', 'mention',);
+        $c = array('name', 'grade');
+        if ($this->show_mencaoI) {
+            $c[] = 'mention';
+        }
         if ($this->show_fi) {
             $c[] = 'fi';
         }
