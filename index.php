@@ -12,7 +12,7 @@ $group =                optional_param('group', 0, PARAM_INT);
 $PAGE->set_url(new moodle_url('/grade/report/transposicao/index.php', array('id'=>$courseid)));
 
 if (!isset($CFG->grade_report_transposicao_cagr_host) || empty($CFG->grade_report_transposicao_cagr_host) ||
-        !isset($CFG->grade_report_escala_pg) || empty($CFG->grade_report_transposicao_escala_pg)) {
+        !isset($CFG->grade_report_transposicao_escala_pg) || empty($CFG->grade_report_transposicao_escala_pg)) {
     $url = "{$CFG->wwwroot}/grade/report/grader/index.php?id={$courseid}";
     print_error('report_not_set', 'gradereport_transposicao', $url);
 }
