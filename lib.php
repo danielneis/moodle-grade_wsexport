@@ -438,8 +438,9 @@ class grade_report_transposicao extends grade_report {
 
         $shortname = $DB->get_field('course', 'shortname', array('id' => $this->courseid));
         $sql = "SELECT curso, disciplina, turma, periodo, modalidade
-                  FROM {geral_Turmas_OK}
-                 WHERE shortname = '{$shortname}'";
+                  FROM {geral_Turmas_Transposicao_Notas}
+                 WHERE shortname = '{$shortname}'
+                 LIMIT 1";
         if (!$this->klass = academico::get_record_sql($sql)) {
             $url = "{$CFG->wwwroot}/grade/report/grader/index.php?id={$this->courseid}";
             print_error('class_not_in_middleware', 'gradereport_transposicao', $url);
