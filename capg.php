@@ -75,24 +75,19 @@ class TransposicaoCAPG extends ControleAcademico {
 
             if (isset($fis[$matricula])) {
                 $f = 'I';
-                if ($grade != 'NULL') $grade = '0';
+                $capg_grade = 'E';
             } else {
                 $f = 'S';
-            }
-
-            if (empty($grade)){
-                $grade = "NULL";
-            } else {
-                $grade = "'{$grade}'";
+                $capg_grade = empty($grade) ? 'E' : $grade;
             }
 
             $sql = "EXEC sp_ConceitoMoodleCAPG {$this->sp_params['send']} ,
                     {$this->klass->ano}, {$this->klass->periodo}, '{$this->klass->disciplina}',
-                    {$matricula}, {$grade}, '{$f}', {$USER->username}";
+                    {$matricula}, '{$capg_grade}', '{$f}', {$USER->username}";
 
             $this->db->Execute($sql);
             $msg = utf8_encode(trim($this->db->ErrorMsg()));
-            $log_info = "matricula: {$matricula}; nota: {$grade}; mencao: {$i}; frequência: {$f}";
+            $log_info = "matricula: {$matricula}; nota: {$capg_grade}; mencao: {$i}; frequência: {$f}";
 
             if($msg != 'ok'){//TODO:testar
                 $this->send_results[$matricula] = $msg;

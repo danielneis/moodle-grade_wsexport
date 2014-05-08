@@ -309,7 +309,7 @@ class grade_report_transposicao extends grade_report {
 
                 list($has_mencao_i, $grade_in_cagr) = $this->get_grade_and_mencao_i($current_student);
 
-                $has_fi = ($current_student['frequencia'] == 'FI');
+                $has_fi = $current_student['frequencia'] == 'FI' || $current_student['frequencia'] == 'I';
                 $sent_date = '';
                 $alert = '';
                 $grade_on_cagr_hidden = '';
