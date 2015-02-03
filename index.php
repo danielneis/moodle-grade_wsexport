@@ -9,8 +9,6 @@ $courseid =             required_param('id', PARAM_INT);// course id
 $force_course_grades =  optional_param('force_course_grades', 0, PARAM_INT);
 $group =                optional_param('group', 0, PARAM_INT);
 
-$PAGE->set_url(new moodle_url('/grade/report/transposicao/index.php', array('id'=>$courseid)));
-
 if (!isset($CFG->grade_report_transposicao_cagr_host) || empty($CFG->grade_report_transposicao_cagr_host) ||
         !isset($CFG->grade_report_transposicao_escala_pg) || empty($CFG->grade_report_transposicao_escala_pg)) {
     $url = "{$CFG->wwwroot}/grade/report/grader/index.php?id={$courseid}";
@@ -22,10 +20,16 @@ if (!$course = $DB->get_record('course', array('id' => $courseid))) {
 }
 
 require_login($courseid);
-
-$context = get_context_instance(CONTEXT_COURSE, $course->id);
-
+$context = context_course::instance($courseid);
 require_capability('gradereport/transposicao:view', $context);
+
+$baseurl = new moodle_url('/grade/report/transposicao/index.php', array('id'=>$courseid));
+
+$PAGE->set_url($baseurl);
+$PAGE->set_context($context);
+$PAGE->set_pagelayout('report');
+$PAGE->set_title(get_string('pluginname', 'gradereport_transposicao'));
+$PAGE->set_heading(get_string('pluginname', 'gradereport_transposicao'));
 
 print_grade_page_head($COURSE->id, 'report', 'transposicao',
                       get_string('modulename', 'gradereport_transposicao') .
@@ -52,4 +56,5 @@ if (academico::get_record_sql($sql)) { // metacourse
     $report->show();
 
 }
+
 echo $OUTPUT->footer();

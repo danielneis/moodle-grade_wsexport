@@ -1,4 +1,7 @@
 <?php
+
+defined('MOODLE_INTERNAL') || die;
+
 require_once('controle_academico.php');
 
 class TransposicaoCAGR extends ControleAcademico {

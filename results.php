@@ -4,16 +4,24 @@ include('../../../config.php');
 require($CFG->libdir .'/gradelib.php');
 require($CFG->dirroot.'/grade/lib.php');
 
-$courseid = required_param('id', PARAM_INT); // course id
-$PAGE->set_url(new moodle_url('/grade/report/transposicao/results.php', array('id'=>$courseid)));
+//$courseid = required_param('id', PARAM_INT); // course id
+   $courseid = 2;
 
 if (!$course = $DB->get_record('course', array('id' => $courseid))) {
     print_error('invalidcourseid');
 }
 
 require_login($course->id);
-$context = get_context_instance(CONTEXT_COURSE, $course->id);
+$context = context_course::instance($course->id);
 require_capability('gradereport/transposicao:send', $context);
+
+$baseurl = new moodle_url('/grade/report/transposicao/results.php', array('id'=>$courseid));
+
+$PAGE->set_url($baseurl);
+$PAGE->set_context($context);
+$PAGE->set_pagelayout('report');
+$PAGE->set_title(get_string('pluginname', 'gradereport_transposicao'));
+$PAGE->set_heading(get_string('pluginname', 'gradereport_transposicao'));
 
 $navigation = grade_build_nav(__FILE__, get_string('modulename', 'gradereport_transposicao'), $course->id);
 

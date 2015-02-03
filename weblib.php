@@ -1,5 +1,7 @@
 <?php
 
+defined('MOODLE_INTERNAL') || die;
+
 function get_checkbox($name, $checked, $disabled) {
     $check = $checked ? 'checked="checked"' : '';
     $dis = $disabled ? 'disabled="disabled"' : '';
@@ -27,8 +29,7 @@ function lista_turmas_afiliadas($courseid){
     $turmas_outros = array();
 
     foreach ($turmas as $t) {
-        $context = get_context_instance(CONTEXT_COURSE, $t->id);
-
+        $context = context_course::instance($t->id);
         if (has_capability('gradereport/transposicao:view', $context)) {
             $turmas_professor[] = "<a href='{$CFG->wwwroot}/grade/report/transposicao/index.php?id={$t->id}' target='_blank'> {$t->fullname} </a>";
         }else{

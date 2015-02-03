@@ -1,4 +1,7 @@
 <?php
+
+defined('MOODLE_INTERNAL') || die;
+
 require_once($CFG->dirroot.'/grade/report/lib.php');
 require_once($CFG->dirroot.'/grade/report/transposicao/weblib.php');
 require_once($CFG->libdir.'/tablelib.php');
@@ -54,9 +57,9 @@ class grade_report_transposicao extends grade_report {
 
         $this->group = $group;
 
-        $context = get_context_instance(CONTEXT_COURSE, $this->courseid);
+        $coursecontext = context_course::instance($this->courseid);
         $this->moodle_students = get_role_users($DB->get_field('role', 'id', array('shortname' => 'student')),
-                                                $context, false, '', 'u.firstname, u.lastname', null, $this->group);
+                                                $coursecontext, false, '', 'u.firstname, u.lastname', null, $this->group);
 
         $this->get_course_grade_item($force_course_grades);
         $this->get_class_from_middleware();
@@ -442,7 +445,7 @@ class grade_report_transposicao extends grade_report {
                  WHERE shortname = '{$shortname}'
                  LIMIT 1";
         if (!$this->klass = academico::get_record_sql($sql)) {
-            $url = "{$CFG->wwwroot}/grade/report/grader/index.php?id={$this->courseid}";
+            $url = new moodle_url('/grade/report/grader/index.php', array('id'=>$this->courseid));
             print_error('class_not_in_middleware', 'gradereport_transposicao', $url);
         }
     }

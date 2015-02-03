@@ -11,15 +11,21 @@ $fis           = optional_param_array('fis', array(), PARAM_RAW);// frequencias 
 $grades_cagr   = optional_param('grades_cagr', array(), PARAM_RAW);// grades that was updated on cagr, hidden in form
 $overwrite_all = optional_param('overwrite_all', 0, PARAM_INT);// should overwrite grades updated directly on cagr
 
-$PAGE->set_url(new moodle_url('/grade/report/transposicao/confirm.php', array('id'=>$courseid)));
-
 if (!$course = $DB->get_record('course', array('id' => $courseid))) {
     print_error('invalidcourseid');
 }
 
 require_login($course->id);
-$context = get_context_instance(CONTEXT_COURSE, $course->id);
+$context = context_course::instance($course->id);
 require_capability('gradereport/transposicao:send', $context);
+
+$baseurl = new moodle_url('/grade/report/transposicao/confirm.php', array('id'=>$courseid));
+
+$PAGE->set_url($baseurl);
+$PAGE->set_context($context);
+$PAGE->set_pagelayout('report');
+$PAGE->set_title(get_string('pluginname', 'gradereport_transposicao'));
+$PAGE->set_heading(get_string('pluginname', 'gradereport_transposicao'));
 
 $str_grades        = get_string('grades');
 $str_transposition = get_string('modulename', 'gradereport_transposicao');
@@ -60,5 +66,6 @@ foreach ($fis as $matricula => $fi) {
 
 echo '<p>', $str_notice, '</p><p>',$str_confirm, '</p>',
      '<p class="yes_no" ><input type="submit" name="send_yes" value="'.$str_yes.'" />',
-     '<input type="submit" name="send_no" value="'.$str_no.'" /></p></form>',
-     $OUTPUT->footer();
+     '<input type="submit" name="send_no" value="'.$str_no.'" /></p></form>';
+
+echo $OUTPUT->footer();

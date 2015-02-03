@@ -1,4 +1,7 @@
 <?php
+
+defined('MOODLE_INTERNAL') || die;
+
 require_once('controle_academico.php');
 
 class TransposicaoCAPG extends ControleAcademico {
@@ -117,8 +120,8 @@ class TransposicaoCAPG extends ControleAcademico {
 
             // o item de nota (ou o curso) está usando letras
             // devemos verificar se elas são as mesmas definidas no site
-            $course_letters = grade_get_letters(get_context_instance(CONTEXT_COURSE, $course_grade_item->courseid));
-            $site_letters = grade_get_letters(get_context_instance(CONTEXT_SYSTEM));
+            $course_letters = grade_get_letters(context_course::instance($course_grade_item->courseid));
+            $site_letters = grade_get_letters(context_system::instance());
             if (array_values($site_letters) != array_values($course_letters)) {
                 return 'unformatted_grades_capg_invalid_letters';
             }
