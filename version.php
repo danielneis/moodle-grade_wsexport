@@ -22,7 +22,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->version = 2015020300;
-$plugin->requires = 2014111003;
+$plugin->requires = 2013111800;
 $plugin->component = 'gradereport_transposicao';
 $plugin->dependencies = array(
     'local_academico'   => 2012081700,
