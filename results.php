@@ -4,8 +4,7 @@ include('../../../config.php');
 require($CFG->libdir .'/gradelib.php');
 require($CFG->dirroot.'/grade/lib.php');
 
-//$courseid = required_param('id', PARAM_INT); // course id
-   $courseid = 2;
+$courseid = required_param('id', PARAM_INT); // course id
 
 if (!$course = $DB->get_record('course', array('id' => $courseid))) {
     print_error('invalidcourseid');
