@@ -90,7 +90,7 @@ class TransposicaoCAPG extends ControleAcademico {
 
             $this->db->Execute($sql);
             $msg = utf8_encode(trim($this->db->ErrorMsg()));
-            $log_info = "matricula: {$matricula}; nota: {$capg_grade}; mencao: {$i}; frequência: {$f}";
+            $log_info = "matricula: {$matricula}; nota: {$capg_grade}; frequência: {$f}";
 
             if($msg != 'ok'){//TODO:testar
                 $this->send_results[$matricula] = $msg;
