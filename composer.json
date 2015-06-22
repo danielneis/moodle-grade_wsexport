@@ -1,0 +1,12 @@
+{
+    "name": "moodle-ufsc/grades_transposicao",
+    "description": "Relatório de notas que envia as notas para os controles academicos",
+    "license": "GPLv3",
+    "type": "moodle-grade",
+    "require": {
+      "composer/installers": "~1.0"
+    },
+    "extra": {
+      "installer-name": "transposicao"
+    }
+}
