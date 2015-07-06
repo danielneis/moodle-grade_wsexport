@@ -4,13 +4,14 @@ defined('MOODLE_INTERNAL') || die;
 if ($ADMIN->fulltree) {
     global $DB;
 
-    $settings->add(new admin_setting_configcheckbox('grade_report_transposicao_show_fi',
-                                                    get_string('config_show_fi', 'gradereport_transposicao'),
-                                                    get_string('desc_show_fi', 'gradereport_transposicao'), 0));
+    $settings->add(new admin_setting_configcheckbox('grade_report_wsexport_show_fi',
+                                                    get_string('config_show_fi', 'gradereport_wsexport'),
+                                                    get_string('desc_show_fi', 'gradereport_wsexport'), 0));
 
-    $settings->add(new admin_setting_configcheckbox('grade_report_transposicao_presencial',
-                                                    get_string('config_presencial', 'gradereport_transposicao'),
-                                                    get_string('desc_presencial', 'gradereport_transposicao'), 0));
+    $settings->add(new admin_setting_configcheckbox('grade_report_wsexport_show_mention',
+                                                    get_string('config_show_mention', 'gradereport_wsexport'),
+                                                    get_string('desc_show_mention', 'gradereport_wsexport'), 0));
+
 
     $scales_options = array(get_string('none'));
     if ($scales = $DB->get_records('scale', array('courseid' => 0), 'id', 'id, name')) {
@@ -18,27 +19,57 @@ if ($ADMIN->fulltree) {
             $scales_options[$obj->id] = $obj->name;
         }
     }
-    $settings->add(new admin_setting_configselect('grade_report_transposicao_escala_pg',
-                                                  get_string('config_escala_pg', 'gradereport_transposicao'),
-                                                  get_string('desc_escala_pg', 'gradereport_transposicao'),
+    $settings->add(new admin_setting_configselect('grade_report_wsexport_escala_pg',
+                                                  get_string('config_escala_pg', 'gradereport_wsexport'),
+                                                  get_string('desc_escala_pg', 'gradereport_wsexport'),
                                                   0,
                                                   $scales_options));
 
+    $settings->add(new admin_setting_configtext('grade_report_wsexport_send_grades_url',
+                    get_string('send_grades_url_nome', 'gradereport_wsexport'),
+                    get_string('send_grades_url_msg', 'gradereport_wsexport'), ''));
 
-    $settings->add(new admin_setting_configtext('grade_report_transposicao_cagr_host',
-                    get_string('cagr_host_nome', 'gradereport_transposicao'),
-                    get_string('cagr_host_msg', 'gradereport_transposicao'), ''));
+    $settings->add(new admin_setting_configtext('grade_report_wsexport_send_grades_username_param',
+                    get_string('send_grades_username_param_nome', 'gradereport_wsexport'),
+                    get_string('send_grades_username_param_msg', 'gradereport_wsexport'), ''));
 
-    $settings->add(new admin_setting_configtext('grade_report_transposicao_cagr_base',
-                    get_string('cagr_base_nome', 'gradereport_transposicao'),
-                    get_string('cagr_base_msg', 'gradereport_transposicao'), ''));
+    $settings->add(new admin_setting_configtext('grade_report_wsexport_send_grades_course_param',
+                    get_string('send_grades_course_param_nome', 'gradereport_wsexport'),
+                    get_string('send_grades_course_param_msg', 'gradereport_wsexport'), ''));
 
-    $settings->add(new admin_setting_configtext('grade_report_transposicao_cagr_user',
-                    get_string('cagr_user_nome', 'gradereport_transposicao'),
-                    get_string('cagr_user_msg', 'gradereport_transposicao'), ''));
+    $settings->add(new admin_setting_configtext('grade_report_wsexport_send_grades_grade_param',
+                    get_string('send_grades_grade_param_nome', 'gradereport_wsexport'),
+                    get_string('send_grades_grade_param_msg', 'gradereport_wsexport'), ''));
 
-    $settings->add(new admin_setting_configtext('grade_report_transposicao_cagr_pass',
-                    get_string('cagr_pass_nome', 'gradereport_transposicao'),
-                    get_string('cagr_pass_msg', 'gradereport_transposicao'), ''));
+    $settings->add(new admin_setting_configtext('grade_report_wsexport_send_grades_attendance_param',
+                    get_string('send_grades_attendance_param_nome', 'gradereport_wsexport'),
+                    get_string('send_grades_attendance_param_msg', 'gradereport_wsexport'), ''));
+
+    $settings->add(new admin_setting_configtext('grade_report_wsexport_send_grades_mention_param',
+                    get_string('send_grades_mention_param_nome', 'gradereport_wsexport'),
+                    get_string('send_grades_mention_param_msg', 'gradereport_wsexport'), ''));
+
+    $settings->add(new admin_setting_configtext('grade_report_wsexport_is_allowed_to_send_url',
+                    get_string('is_allowed_to_send_url_nome', 'gradereport_wsexport'),
+                    get_string('is_allowed_to_send_url_msg', 'gradereport_wsexport'), ''));
+
+    $settings->add(new admin_setting_configtext('grade_report_wsexport_is_allowed_to_send_username_param',
+                    get_string('is_allowed_to_send_username_param_nome', 'gradereport_wsexport'),
+                    get_string('is_allowed_to_send_username_param_msg', 'gradereport_wsexport'), ''));
+
+    $settings->add(new admin_setting_configtext('grade_report_wsexport_is_allowed_to_send_course_param',
+                    get_string('is_allowed_to_send_course_param_nome', 'gradereport_wsexport'),
+                    get_string('is_allowed_to_send_course_param_msg', 'gradereport_wsexport'), ''));
+
+    $settings->add(new admin_setting_configtext('grade_report_wsexport_get_grades_url',
+                    get_string('get_grades_url_nome', 'gradereport_wsexport'),
+                    get_string('get_grades_url_msg', 'gradereport_wsexport'), ''));
+
+    $settings->add(new admin_setting_configtext('grade_report_wsexport_get_grades_username_param',
+                    get_string('get_grades_username_param_nome', 'gradereport_wsexport'),
+                    get_string('get_grades_username_param_msg', 'gradereport_wsexport'), ''));
+
+    $settings->add(new admin_setting_configtext('grade_report_wsexport_get_grades_course_param',
+                    get_string('get_grades_course_param_nome', 'gradereport_wsexport'),
+                    get_string('get_grades_course_param_msg', 'gradereport_wsexport'), ''));
 }
-?>

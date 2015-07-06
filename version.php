@@ -16,14 +16,11 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * @package    gradereport_transposicao
+ * @package    gradereport_wsexport
  */
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version = 2015020300;
+$plugin->version = 2015070600;
 $plugin->requires = 2013111800;
-$plugin->component = 'gradereport_transposicao';
-$plugin->dependencies = array(
-    'local_academico'   => 2012081700,
-);
+$plugin->component = 'gradereport_wsexport';
