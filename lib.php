@@ -59,15 +59,7 @@ class grade_report_wsexport extends grade_report {
         $this->get_moodle_grades();
         $this->remote_grades = $this->get_grades_from_webservice();
 
-        $this->are_grades_in_history = false;//TODO: this test should be done by webservice on is_allowed_to_send_grades().
-        if ($this->are_grades_in_history == true) {
-            $this->cannot_submit = true;
-        }
-
-        $this->in_submission_date_range = true;//TODO: this test should be done by webservice on is_allowed_to_send_grades().
-        if (!$this->in_submission_date_range) {
-            $this->cannot_submit = true;
-        }
+        $this->is_allowed_to_send_grades();
 
         $this->grades_format_status = $this->grades_format_status($this->moodle_grades, $this->course_grade_item);
         if ($this->grades_format_status != 'all_grades_formatted') {
@@ -97,7 +89,7 @@ class grade_report_wsexport extends grade_report {
 
         echo $this->group_selector . '<br/>';
 
-        $this->is_allowed_to_send_grades();
+        $this->print_remote_messages();
 
         $this->msg_using_metacourse_grades();
 
@@ -111,7 +103,7 @@ class grade_report_wsexport extends grade_report {
 
         echo '<div class="report_footer">';
 
-        $this->is_allowed_to_send_grades();
+        $this->print_remote_messages();
 
         $this->msg_unformatted_grades();
         $this->msg_grade_updated_on_remote();
@@ -126,7 +118,17 @@ class grade_report_wsexport extends grade_report {
     }
 
     public function send_grades($grades, $mentions, $fis) {
-        $this->send_grades_to_webservice($grades, $mentions, $fis);
+
+        $url = $CFG->grade_report_wsexport_get_grades_url;
+        $functionname = $CFG->grade_report_wsexport_send_grades_function_name;
+        // TODO: foreach grades... check CFG before send mentions and attendances.
+        $params = array($CFG->grade_report_wsexport_send_grades_username_param => $USER->username,
+                        $CFG->grade_report_wsexport_send_grades_course_param => $courseshortname,
+                        $CFG->grade_report_wsexport_send_grades_grades_param => '', //TODO
+                        $CFG->grade_report_wsexport_send_grades_attendance_param => '', //TODO
+                        $CFG->grade_report_wsexport_send_grades_mention_param => ''); //TODO
+
+        return $this->call_ws($url, $functionname, $params);
     }
 
     private function print_tables() {
@@ -301,7 +303,7 @@ class grade_report_wsexport extends grade_report {
 
                 $grade_in_remote_formatted = str_replace('.', ',', (string)$grade_in_remote);
 
-                if ($this->grade_differ($has_fi, $this->grades_to_send[$student->id], $grade_in_remote))  {
+                if ($this->grades_differ($has_fi, $this->grades_to_send[$student->id], $grade_in_remote))  {
                     $grade_in_remote = str_replace('.', ',', (string)$grade_in_remote);
 
                     $grade_in_moodle = '<span class="diff_grade">'.
@@ -571,21 +573,20 @@ class grade_report_wsexport extends grade_report {
     }
 
     private function get_grades_from_webservice() {
-        // TODO: call webservice and get grades based on course shortname.
-        return array('06232009' => array(
-            'matricula' => '06232009',
-            'nome' => 'Daniel Neis',
-            'nota' => 10,
-            'mencao' => '',
-            'frequencia' => 'FS',
-            'usuario' => 'alguém',
-            'dataAtualizacao' => '2015-07-06 15:15:00'
-        ));
+        global $DB, $CFG, $USER;
+
+        $courseshortname = $DB->get_field('course', 'shortname', array('id' => $this->courseid));
+        $url = $CFG->grade_report_wsexport_get_grades_url;
+        $functionname = $CFG->grade_report_wsexport_get_grades_function_name;
+        $params = array($CFG->grade_report_wsexport_get_grades_username_param => $USER->username,
+                        $CFG->grade_report_wsexport_get_grades_course_param => $courseshortname);
+
+        return $this->call_ws($url, $functionname, $params);
     }
 
     function get_displaytype() {
-        // TODO: get this from webservice?
-        return GRADE_DISPLAY_TYPE_REAL;
+        // TODO: get this from webservice? or global setting?
+        return GRADE_DISPLAY_TYPE_DEFAULT;
     }
 
     // TODO: make it pluggable.
@@ -627,7 +628,7 @@ class grade_report_wsexport extends grade_report {
         return 'all_grades_formatted';
     }
 
-    private function grade_differ($has_fi, $moodle_grade, $ca_grade) {
+    private function grades_differ($has_fi, $moodle_grade, $ca_grade) {
         return ($ca_grade != '(I)') &&
                ($ca_grade != null) &&
                (($moodle_grade != null) && !$has_fi) &&
@@ -635,10 +636,42 @@ class grade_report_wsexport extends grade_report {
     }
 
     private function is_allowed_to_send_grades() {
-        // TODO: call webservice and get a message about the grades.
-        // Webservice must inform :
-        // i) if grades cannot be sent, why?
-        // ii) if grande can be sent, any details wanted.
-        return array(true, 'Grades can be sent until August 1st.');
+        global $DB, $USER, $CFG;
+
+        $courseshortname = $DB->get_field('course', 'shortname', array('id' => $this->courseid));
+        $url = $CFG->grade_report_wsexport_is_allowed_to_send_url;
+        $functionname = $CFG->grade_report_wsexport_is_allowed_to_send_function_name;
+        $params = array($CFG->grade_report_wsexport_is_allowed_to_send_username_param => $USER->username,
+                        $CFG->grade_report_wsexport_is_allowed_to_send_course_param => $courseshortname);
+
+        $result = $this->call_ws($url, $functionname, $params);
+
+        $this->cannot_send = !$result->is_allowed; // TODO: change to setting
+        $this->remote_messages = $result->messages; // TODO: change to setting
+    }
+
+    private function call_ws($serverurl, $functionname, $params = array()) {
+
+        $serverurl = $serverurl . '?wsdl';
+
+        $client = new SoapClient($serverurl);
+        try {
+            $resp = $client->__soapCall($functionname, array($params));
+
+            return $resp;
+        } catch (Exception $e) {
+            echo "Exception:\n";
+            echo $e->getMessage();
+            echo "===\n";
+            return false;
+        }
+    }
+
+    private function print_remote_messages() {
+        if (!empty($this->remote_messages)) {
+            foreach ($this->remote_messages as $msg) {
+                echo '<p>', $msg, '</p>';
+            }
+        }
     }
 }

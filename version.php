@@ -21,6 +21,6 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version = 2015070600;
+$plugin->version = 2015070601;
 $plugin->requires = 2013111800;
 $plugin->component = 'gradereport_wsexport';

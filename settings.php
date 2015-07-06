@@ -29,6 +29,10 @@ if ($ADMIN->fulltree) {
                     get_string('send_grades_url_nome', 'gradereport_wsexport'),
                     get_string('send_grades_url_msg', 'gradereport_wsexport'), ''));
 
+    $settings->add(new admin_setting_configtext('grade_report_wsexport_send_grades_function_name',
+                    get_string('send_grades_function_name_nome', 'gradereport_wsexport'),
+                    get_string('send_grades_function_name_msg', 'gradereport_wsexport'), ''));
+
     $settings->add(new admin_setting_configtext('grade_report_wsexport_send_grades_username_param',
                     get_string('send_grades_username_param_nome', 'gradereport_wsexport'),
                     get_string('send_grades_username_param_msg', 'gradereport_wsexport'), ''));
@@ -53,6 +57,10 @@ if ($ADMIN->fulltree) {
                     get_string('is_allowed_to_send_url_nome', 'gradereport_wsexport'),
                     get_string('is_allowed_to_send_url_msg', 'gradereport_wsexport'), ''));
 
+    $settings->add(new admin_setting_configtext('grade_report_wsexport_is_allowed_to_send_function_name',
+                    get_string('is_allowed_to_send_function_name_nome', 'gradereport_wsexport'),
+                    get_string('is_allowed_to_send_function_name_msg', 'gradereport_wsexport'), ''));
+
     $settings->add(new admin_setting_configtext('grade_report_wsexport_is_allowed_to_send_username_param',
                     get_string('is_allowed_to_send_username_param_nome', 'gradereport_wsexport'),
                     get_string('is_allowed_to_send_username_param_msg', 'gradereport_wsexport'), ''));
@@ -64,6 +72,10 @@ if ($ADMIN->fulltree) {
     $settings->add(new admin_setting_configtext('grade_report_wsexport_get_grades_url',
                     get_string('get_grades_url_nome', 'gradereport_wsexport'),
                     get_string('get_grades_url_msg', 'gradereport_wsexport'), ''));
+
+    $settings->add(new admin_setting_configtext('grade_report_wsexport_get_grades_function_name',
+                    get_string('get_grades_function_name_nome', 'gradereport_wsexport'),
+                    get_string('get_grades_function_name_msg', 'gradereport_wsexport'), ''));
 
     $settings->add(new admin_setting_configtext('grade_report_wsexport_get_grades_username_param',
                     get_string('get_grades_username_param_nome', 'gradereport_wsexport'),
