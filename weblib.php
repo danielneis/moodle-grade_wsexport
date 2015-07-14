@@ -1,4 +1,22 @@
 <?php
+// This file is part of Moodle - http://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+
+/**
+ * @package    gradereport_wsexport
+ */
 
 defined('MOODLE_INTERNAL') || die;
 
@@ -9,7 +27,7 @@ function get_checkbox($name, $checked, $disabled) {
 }
 
 function lista_turmas_afiliadas($courseid){
-    global $OUTPUT, $CFG;
+    global $OUTPUT, $CFG, $DB;
 
     echo $OUTPUT->box_start('generalbox');
     echo get_string('is_metacourse_error','gradereport_wsexport');
@@ -23,7 +41,7 @@ function lista_turmas_afiliadas($courseid){
                          ON (e.customint1 = filha.id)
                       WHERE e.enrol = 'meta'
                         AND c.id = {$courseid}";
-    $turmas = academico::get_records_sql($sql);
+    $turmas = $DB->get_records_sql($sql);
 
     $turmas_professor = array();
     $turmas_outros = array();

@@ -1,15 +1,33 @@
 <?php
+// This file is part of Moodle - http://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+
+/**
+ * @package    gradereport_wsexport
+ */
 
 require('../../../config.php');
 require($CFG->libdir .'/gradelib.php');
 require($CFG->dirroot.'/grade/lib.php');
 
-$courseid      = required_param('id', PARAM_INT);// course id
-$grades        = required_param_array('grades', PARAM_RAW);// grades that was hidden in form
-$mentions      = optional_param_array('mentions', array(), PARAM_RAW);// mencao i
-$fis           = optional_param_array('fis', array(), PARAM_RAW);// frequencias insuficientes
-$grades_remote = optional_param('grades_remote', array(), PARAM_RAW);// grades that was updated on remote, hidden in form
-$overwrite_all = optional_param('overwrite_all', 0, PARAM_INT);// should overwrite grades updated directly on remote
+$courseid                = required_param('id', PARAM_INT);// Course id.
+$grades                  = required_param_array('grades', PARAM_RAW);// Grades that was hidden in form.
+$mentions                = optional_param_array('mentions', array(), PARAM_RAW);// mencao i.
+$insufficientattendances = optional_param_array('insufficientattendances', array(), PARAM_RAW);// Frequencias insuficientes.
+$remotegrades            = optional_param('remotegrades', array(), PARAM_RAW);// Grades that was updated on remote, hidden in form.
+$overwrite_all           = optional_param('overwrite_all', 0, PARAM_INT);// Should overwrite grades updated directly on remote.
 
 if (!$course = $DB->get_record('course', array('id' => $courseid))) {
     print_error('invalidcourseid');
@@ -27,24 +45,24 @@ $PAGE->set_pagelayout('report');
 $PAGE->set_title(get_string('pluginname', 'gradereport_wsexport'));
 $PAGE->set_heading(get_string('pluginname', 'gradereport_wsexport'));
 
-$str_grades        = get_string('grades');
-$str_transposition = get_string('modulename', 'gradereport_wsexport');
-$str_confirm       = get_string('confirm_notice', 'gradereport_wsexport');
-$str_yes           = get_string('yes');
-$str_no            = get_string('no');
-$str_notice        = '';
+$strgrades        = get_string('grades');
+$strtransposition = get_string('modulename', 'gradereport_wsexport');
+$strconfirm       = get_string('confirm_notice', 'gradereport_wsexport');
+$stryes           = get_string('yes');
+$strno            = get_string('no');
+$strnotice        = '';
 
-if (!empty($grades_remote)) {
+if (!empty($remotegrades)) {
     if ($overwrite_all == 1) {
-        $str_notice = get_string('will_overwrite_grades', 'gradereport_wsexport');
+        $strnotice = get_string('will_overwrite_grades', 'gradereport_wsexport');
     } else {
-        // remove grades that was updated on remote, if user did not want to overwrite
-        $grades = array_diff_key($grades, $grades_remote);
-        $str_notice = get_string('wont_overwrite_grades', 'gradereport_wsexport');
+        // Remove grades that was updated on remote, if user did not want to overwrite.
+        $grades = array_diff_key($grades, $remotegrades);
+        $strnotice = get_string('wont_overwrite_grades', 'gradereport_wsexport');
     }
 }
 
-$navigation = grade_build_nav(__FILE__, $str_transposition, $course->id);
+$navigation = grade_build_nav(__FILE__, $strtransposition, $course->id);
 
 print_grade_page_head($COURSE->id, 'report', 'wsexport',
                       get_string('modulename', 'gradereport_wsexport') .
@@ -60,12 +78,12 @@ foreach ($mentions as $matricula => $mencao) {
     echo '<input type="hidden" name="mentions['.$matricula.']" value="1"/>';
 }
 
-foreach ($fis as $matricula => $fi) {
-    echo '<input type="hidden" name="fis['.$matricula.']" value="1"/>';
+foreach ($insufficientattendances as $matricula => $fi) {
+    echo '<input type="hidden" name="insufficientattendances['.$matricula.']" value="1"/>';
 }
 
-echo '<p>', $str_notice, '</p><p>',$str_confirm, '</p>',
-     '<p class="yes_no" ><input type="submit" name="send_yes" value="'.$str_yes.'" />',
-     '<input type="submit" name="send_no" value="'.$str_no.'" /></p></form>';
+echo '<p>', $strnotice, '</p><p>',$strconfirm, '</p>',
+     '<p class="yes_no" ><input type="submit" name="send_yes" value="'.$stryes.'" />',
+     '<input type="submit" name="send_no" value="'.$strno.'" /></p></form>';
 
 echo $OUTPUT->footer();

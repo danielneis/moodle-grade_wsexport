@@ -1,4 +1,22 @@
 <?php
+// This file is part of Moodle - http://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+
+/**
+ * @package    gradereport_wsexport
+ */
 
 defined('MOODLE_INTERNAL') || die;
 
@@ -17,7 +35,7 @@ class grade_report_wsexport extends grade_report {
     private $statistics = array('not_in_remote' => 0, 'not_in_moodle' => 0, 'ok' => 0,
                                 'unformatted_grades' => 0, 'updated_on_remote' => 0);
 
-    private $send_results = array(); // um array (matricula => msg) com as msgs de erro de envio de notas
+    private $sendresults = array(); // um array (matricula => msg) com as msgs de erro de envio de notas
 
     private $show_fi = null; // from CFG, if must show the 'FI' column
     private $show_mencaoI = null;
@@ -39,8 +57,9 @@ class grade_report_wsexport extends grade_report {
 
         parent::__construct($courseid, $gpr, $context, $page);
 
-        if (isset($USER->send_results)) {
-            unset($USER->send_results);
+        // Weird, but works because result.php does not construct the report ;) .
+        if (isset($USER->gradereportwsexportsendresults)) {
+            unset($USER->gradereportwsexportsendresults);
         }
 
         $this->show_fi = (isset($CFG->grade_report_wsexport_show_fi) &&
@@ -81,6 +100,13 @@ class grade_report_wsexport extends grade_report {
     function process_action($target, $action){//TODO?
     }
 
+    private functin print_local_messages() {
+        $this->msg_unformatted_grades();
+        $this->msg_grade_updated_on_remote();
+        $this->msg_using_metacourse_grades();
+        $this->msg_groups();
+    }
+
     public function show() {
 
         $this->setup_ok_table();
@@ -91,11 +117,7 @@ class grade_report_wsexport extends grade_report {
 
         $this->print_remote_messages();
 
-        $this->msg_using_metacourse_grades();
-
-        $this->msg_unformatted_grades();
-        $this->msg_grade_updated_on_remote();
-        $this->msg_groups();
+        $this->print_local_messages();
 
         echo "<form method=\"post\" action=\"confirm.php?id={$this->courseid}\">";
 
@@ -103,13 +125,11 @@ class grade_report_wsexport extends grade_report {
 
         echo '<div class="report_footer">';
 
+        $this->select_overwrite_grades();
+
         $this->print_remote_messages();
 
-        $this->msg_unformatted_grades();
-        $this->msg_grade_updated_on_remote();
-        $this->msg_groups();
-
-        $this->select_overwrite_grades();
+        $this->print_local_messages();
 
         $str_submit_button = get_string('submit_button', 'gradereport_wsexport');
         $dis = ($this->cannot_submit == true) ? 'disabled="disabled"' : '';
@@ -117,18 +137,24 @@ class grade_report_wsexport extends grade_report {
              '</div></form>';
     }
 
-    public function send_grades($grades, $mentions, $fis) {
+    public function send_grades($grades, $mentions, $insufficientattendances) {
+        global $USER;
 
         $url = $CFG->grade_report_wsexport_get_grades_url;
         $functionname = $CFG->grade_report_wsexport_send_grades_function_name;
-        // TODO: foreach grades... check CFG before send mentions and attendances.
+        // TODO: check if mentions and attendances should be sent.
         $params = array($CFG->grade_report_wsexport_send_grades_username_param => $USER->username,
                         $CFG->grade_report_wsexport_send_grades_course_param => $courseshortname,
-                        $CFG->grade_report_wsexport_send_grades_grades_param => '', //TODO
-                        $CFG->grade_report_wsexport_send_grades_attendance_param => '', //TODO
-                        $CFG->grade_report_wsexport_send_grades_mention_param => ''); //TODO
+                        $CFG->grade_report_wsexport_send_grades_grades_param => $grades,
+                        $CFG->grade_report_wsexport_send_grades_attendance_param => $insufficientattendance,
+                        $CFG->grade_report_wsexport_send_grades_mention_param => $mentions);
 
-        return $this->call_ws($url, $functionname, $params);
+        // TODO: create and trigger event
+        //add_to_log($this->courseid, 'grade', 'transposicao', 'send.php', $log_info);
+
+        $this->sendresults = $this->call_ws($url, $functionname, $params);
+        $USER->gradereportwsexportsendresults = $this->sendresults;
+        $this->send_email_with_errors();
     }
 
     private function print_tables() {
@@ -292,7 +318,7 @@ class grade_report_wsexport extends grade_report {
 
                         $alert .= '<p>'.get_string('grade_updated_on_remote', 'gradereport_wsexport').'</p>';
 
-                        $grade_on_remote_hidden = '<input type="hidden" name="grades_remote['.$student->username.']" value="1"/>';
+                        $grade_on_remote_hidden = '<input type="hidden" name="remotegrades['.$student->username.']" value="1"/>';
                     }
                 }
                 if (is_null($student->moodle_grade) || $student->moodle_grade == '-') {
@@ -325,7 +351,7 @@ class grade_report_wsexport extends grade_report {
                     $row[] = get_checkbox("mentions[{$student->username}]", $has_mencao_i, $this->cannot_submit);
                 }
                 if ($this->show_fi) {
-                    $row[] = get_checkbox("fis[{$student->username}]", $has_fi, $this->cannot_submit);
+                    $row[] = get_checkbox("insufficientattendances[{$student->username}]", $has_fi, $this->cannot_submit);
                 }
 
                 $row = array_merge($row, array($grade_in_remote_formatted, $sent_date, $alert));
@@ -359,7 +385,7 @@ class grade_report_wsexport extends grade_report {
                     $row[] = get_checkbox("mentions[]", $has_mencao_i, $this->cannot_submit);
                 }
                 if ($this->show_fi) {
-                    $row[] = get_checkbox("fis[{$matricula}]", $student['frequencia'] == 'FI', true);
+                    $row[] = get_checkbox("insufficientattendances[{$matricula}]", $student['frequencia'] == 'FI', true);
                 }
 
                 if (empty($student['nota']) || empty($student['dataAtualizacao'])) {
@@ -387,7 +413,7 @@ class grade_report_wsexport extends grade_report {
                 $row[] = get_checkbox("mentions[]", '', true);
             }
             if ($this->show_fi) {
-                $row[] = get_checkbox("fis[{$student->username}]", false, true);
+                $row[] = get_checkbox("insufficientattendances[{$student->username}]", false, true);
             }
 
             $rows[] = $row;
@@ -617,12 +643,12 @@ class grade_report_wsexport extends grade_report {
             if (is_numeric($grade)) {
                 $decimal_value = $grade - (int)$grade;
                 if ($decimal_value != 0 && $decimal_value != 0.5) {
-                    return 'unformatted_grades_remote';
+                    return 'unformatted_remotegrades';
                 } else if ($grade < 0 || $grade > 10) {
-                    return 'unformatted_grades_remote';
+                    return 'unformatted_remotegrades';
                 }
             } else if($grade != '-') {
-                return 'unformatted_grades_remote';
+                return 'unformatted_remotegrades';
             }
         }
         return 'all_grades_formatted';
@@ -674,4 +700,24 @@ class grade_report_wsexport extends grade_report {
             }
         }
     }
+    private function send_email_with_errors() {
+        global $DB;
+
+        if (!empty($this->sendresults)) {
+
+            $course_name = $DB->get_field('course', 'fullname', array('id' => $this->courseid));
+            $admin = get_admin();
+            $subject = 'Falha na transposicao de notas (CAGR) da disciplina '.$course_name;
+            $body = '';
+
+            $names = $DB->get_records_select('user', 'username IN ('.implode(',', array_keys($this->sendresults)) . ')',
+                            null, 'firstname,lastname', 'username,firstname');
+
+            foreach ($this->sendresults as $matricula => $error) {
+                $body .= "Matricula: {$matricula}; {$names[$matricula]->firstname} ; Erro: {$error}\n";
+            }
+            email_to_user($admin, $admin, $subject, $body);
+        }
+    }
+
 }
