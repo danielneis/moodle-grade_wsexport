@@ -100,7 +100,7 @@ class grade_report_wsexport extends grade_report {
     function process_action($target, $action){//TODO?
     }
 
-    private functin print_local_messages() {
+    private function print_local_messages() {
         $this->msg_unformatted_grades();
         $this->msg_grade_updated_on_remote();
         $this->msg_using_metacourse_grades();
