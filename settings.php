@@ -16,6 +16,8 @@
 
 /**
  * @package    gradereport_wsexport
+ * @copyright  2015 onwards Daniel Neis
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die;
@@ -33,46 +35,50 @@ if ($ADMIN->fulltree) {
     */
 
     // Permission checking - general user and course checking.
-    $settings->add(new admin_setting_heading('grade_report_wsexport_can_send_user_and_course',
-                    get_string('can_send_user_and_course_heading', 'gradereport_wsexport'),
-                    get_string('can_send_user_and_course_info', 'gradereport_wsexport'), ''));
+    $settings->add(new admin_setting_heading('grade_report_wsexport_can_user_send_for_course',
+                    get_string('can_user_send_for_course_heading', 'gradereport_wsexport'),
+                    get_string('can_user_send_for_course_info', 'gradereport_wsexport'), ''));
 
-    $settings->add(new admin_setting_configtext('grade_report_wsexport_can_send_user_and_course_url',
-                    get_string('can_send_user_and_course_url_nome', 'gradereport_wsexport'),
-                    get_string('can_send_user_and_course_url_msg', 'gradereport_wsexport'), ''));
+    $settings->add(new admin_setting_configtext('grade_report_wsexport_can_user_send_for_course_url',
+                    get_string('can_user_send_for_course_url_nome', 'gradereport_wsexport'),
+                    get_string('can_user_send_for_course_url_msg', 'gradereport_wsexport'), ''));
 
-    $settings->add(new admin_setting_configtext('grade_report_wsexport_can_send_user_and_course_function_name',
-                    get_string('can_send_user_and_course_function_name_nome', 'gradereport_wsexport'),
-                    get_string('can_send_user_and_course_function_name_msg', 'gradereport_wsexport'), ''));
+    $settings->add(new admin_setting_configtext('grade_report_wsexport_can_user_send_for_course_function_name',
+                    get_string('can_user_send_for_course_function_name_nome', 'gradereport_wsexport'),
+                    get_string('can_user_send_for_course_function_name_msg', 'gradereport_wsexport'), ''));
 
-    $settings->add(new admin_setting_configtext('grade_report_wsexport_can_send_user_and_course_username_param',
-                    get_string('can_send_user_and_course_username_param_nome', 'gradereport_wsexport'),
-                    get_string('can_send_user_and_course_username_param_msg', 'gradereport_wsexport'), ''));
+    $settings->add(new admin_setting_configtext('grade_report_wsexport_can_user_send_for_course_username_param',
+                    get_string('can_user_send_for_course_username_param_nome', 'gradereport_wsexport'),
+                    get_string('can_user_send_for_course_username_param_msg', 'gradereport_wsexport'), ''));
 
-    $settings->add(new admin_setting_configtext('grade_report_wsexport_can_send_user_and_course_course_param',
-                    get_string('can_send_user_and_course_course_param_nome', 'gradereport_wsexport'),
-                    get_string('can_send_user_and_course_course_param_msg', 'gradereport_wsexport'), ''));
+    $settings->add(new admin_setting_configtext('grade_report_wsexport_can_user_send_for_course_course_param',
+                    get_string('can_user_send_for_course_course_param_nome', 'gradereport_wsexport'),
+                    get_string('can_user_send_for_course_course_param_msg', 'gradereport_wsexport'), ''));
 
     // Permission checking - general user and course checking.
-    $settings->add(new admin_setting_heading('grade_report_wsexport_can_send_grades',
-                    get_string('can_send_grades_heading', 'gradereport_wsexport'),
-                    get_string('can_send_grades_info', 'gradereport_wsexport'), ''));
+    $settings->add(new admin_setting_heading('grade_report_wsexport_are_grades_valid',
+                    get_string('are_grades_valid_heading', 'gradereport_wsexport'),
+                    get_string('are_grades_valid_info', 'gradereport_wsexport'), ''));
 
-    $settings->add(new admin_setting_configtext('grade_report_wsexport_can_send_grades_url',
-                    get_string('can_send_grades_url_nome', 'gradereport_wsexport'),
-                    get_string('can_send_grades_url_msg', 'gradereport_wsexport'), ''));
+    $settings->add(new admin_setting_configtext('grade_report_wsexport_are_grades_valid_url',
+                    get_string('are_grades_valid_url_nome', 'gradereport_wsexport'),
+                    get_string('are_grades_valid_url_msg', 'gradereport_wsexport'), ''));
 
-    $settings->add(new admin_setting_configtext('grade_report_wsexport_can_send_grades_function_name',
-                    get_string('can_send_grades_function_name_nome', 'gradereport_wsexport'),
-                    get_string('can_send_grades_function_name_msg', 'gradereport_wsexport'), ''));
+    $settings->add(new admin_setting_configtext('grade_report_wsexport_are_grades_valid_function_name',
+                    get_string('are_grades_valid_function_name_nome', 'gradereport_wsexport'),
+                    get_string('are_grades_valid_function_name_msg', 'gradereport_wsexport'), ''));
 
-    $settings->add(new admin_setting_configtext('grade_report_wsexport_can_send_grades_username_param',
-                    get_string('can_send_grades_username_param_nome', 'gradereport_wsexport'),
-                    get_string('can_send_grades_username_param_msg', 'gradereport_wsexport'), ''));
+    $settings->add(new admin_setting_configtext('grade_report_wsexport_are_grades_valid_username_param',
+                    get_string('are_grades_valid_username_param_nome', 'gradereport_wsexport'),
+                    get_string('are_grades_valid_username_param_msg', 'gradereport_wsexport'), ''));
 
-    $settings->add(new admin_setting_configtext('grade_report_wsexport_can_send_grades_course_param',
-                    get_string('can_send_grades_course_param_nome', 'gradereport_wsexport'),
-                    get_string('can_send_grades_course_param_msg', 'gradereport_wsexport'), ''));
+    $settings->add(new admin_setting_configtext('grade_report_wsexport_are_grades_valid_course_param',
+                    get_string('are_grades_valid_course_param_nome', 'gradereport_wsexport'),
+                    get_string('are_grades_valid_course_param_msg', 'gradereport_wsexport'), ''));
+
+    $settings->add(new admin_setting_configtext('grade_report_wsexport_are_grades_valid_grades_param',
+                    get_string('are_grades_valid_grades_param_nome', 'gradereport_wsexport'),
+                    get_string('are_grades_valid_grades_param_msg', 'gradereport_wsexport'), ''));
 
 
     // Get grades.
@@ -116,6 +122,10 @@ if ($ADMIN->fulltree) {
     $settings->add(new admin_setting_configtext('grade_report_wsexport_send_grades_course_param',
                     get_string('send_grades_course_param_nome', 'gradereport_wsexport'),
                     get_string('send_grades_course_param_msg', 'gradereport_wsexport'), ''));
+
+    $settings->add(new admin_setting_configtext('grade_report_wsexport_send_grades_grades_param',
+                    get_string('send_grades_grades_param_nome', 'gradereport_wsexport'),
+                    get_string('send_grades_grades_param_msg', 'gradereport_wsexport'), ''));
 
     // Send grades.
     $settings->add(new admin_setting_heading('grade_report_wsexport_grade_items',

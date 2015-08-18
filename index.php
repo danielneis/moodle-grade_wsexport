@@ -1,4 +1,5 @@
 <?php
+
 // This file is part of Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
@@ -16,6 +17,8 @@
 
 /**
  * @package    gradereport_wsexport
+ * @copyright  2015 onwards Daniel Neis
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 include('../../../config.php');
@@ -40,31 +43,18 @@ $baseurl = new moodle_url('/grade/report/wsexport/index.php', array('id'=>$cours
 $PAGE->set_url($baseurl);
 $PAGE->set_context($context);
 $PAGE->set_pagelayout('report');
-$PAGE->set_title(get_string('pluginname', 'gradereport_wsexport'));
-$PAGE->set_heading(get_string('pluginname', 'gradereport_wsexport'));
 
 print_grade_page_head($COURSE->id, 'report', 'wsexport',
-                      get_string('modulename', 'gradereport_wsexport') .
-                      $OUTPUT->help_icon('wsexport', 'gradereport_wsexport'));
+                      get_string('pluginname', 'gradereport_wsexport'), false, false, true,
+                      'wsexport', 'gradereport_wsexport');
 
-$sql = "SELECT DISTINCT cm.id
-         FROM {course} cm
-         JOIN {enrol} e
-           ON (e.courseid = cm.id AND
-               e.enrol = 'meta')
-        WHERE cm.id = {$courseid}";
+$gpr = new grade_plugin_return(array('type' => 'report', 'plugin'=> 'grader', 'courseid' => $courseid));// Return tracking object.
+$report = new grade_report_wsexport($courseid, $gpr, $context, $force_course_grades, $group, null);// Initialise the grader report object.
 
-if ($DB->get_record_sql($sql)) { // metacourse
-
-    lista_turmas_afiliadas($courseid);
-
+if ($report->is_meta_course($courseid)) {
+    $report->lista_turmas_afiliadas($courseid);
 } else {
-
-    grade_regrade_final_grades($courseid);//first make sure we have proper final grades
-
-    $gpr = new grade_plugin_return(array('type'=>'report', 'plugin'=>'grader', 'courseid'=>$courseid));// return tracking object
-    $report = new grade_report_wsexport($courseid, $gpr, $context, $force_course_grades, $group, null);// Initialise the grader report object
-
+    grade_regrade_final_grades($courseid);// First make sure we have proper final grades.
     $report->show();
 }
 

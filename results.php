@@ -16,6 +16,8 @@
 
 /**
  * @package    gradereport_wsexport
+ * @copyright  2015 onwards Daniel Neis
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 include('../../../config.php');
@@ -32,7 +34,7 @@ require_login($course->id);
 $context = context_course::instance($course->id);
 require_capability('gradereport/wsexport:send', $context);
 
-$baseurl = new moodle_url('/grade/report/wsexport/results.php', array('id'=>$courseid));
+$baseurl = new moodle_url('/grade/report/wsexport/results.php', array('id' => $courseid));
 
 $PAGE->set_url($baseurl);
 $PAGE->set_context($context);
@@ -48,22 +50,22 @@ print_grade_page_head($COURSE->id, 'report', 'wsexport',
 
 if (empty($USER->gradereportwsexportsendresults)) {
 
-    echo '<p>', get_string('all_grades_was_sent', 'gradereport_wsexport'), '</p>';
+    echo html_writer::tag('p', get_string('all_grades_was_sent', 'gradereport_wsexport'));
 
 } else {
 
+    //TODO: move to lib.
     $names = $DB->get_records_select('user', 'username IN ('.implode(',', array_keys($USER->gradereportwsexportsendresults)) . ')',
                                      null,'firstname,lastname', 'username,firstname');
 
-    echo '<p>', get_string('some_grades_not_sent', 'gradereport_wsexport'), '</p>',
-         '<ul class="gradereportwsexportsendresults">';
-    foreach ($USER->gradereportwsexportsendresults as $matricula => $msg) {
-        echo '<li>',$names[$matricula]->firstname, ' (', $matricula, '): ', $msg, '</li>';
+    echo html_writer::tag('p', get_string('some_grades_not_sent', 'gradereport_wsexport')),
+         html_writer::start_tag('ul', array('class' => 'gradereportwsexportsendresults'));
+    foreach ($USER->gradereportwsexportsendresults as $username => $msg) {
+        echo html_writer('li', $names[$username]->firstname. ' ('. $username. '): '. $msg);
     }
-    echo '</ul>';
+    echo html_writer::end_tag('ul');
 }
 
-echo '<a href="'.$CFG->wwwroot.'/grade/report/wsexport/index.php?id='.$course->id.'">',
-       get_string('return_to_index', 'gradereport_wsexport'),
-     '</a>',
+echo html_writer::link(new moodle_url('/grade/report/wsexport/index.php', array('id' => $course->id)),
+                       get_string('return_to_index', 'gradereport_wsexport')),
      $OUTPUT->footer();

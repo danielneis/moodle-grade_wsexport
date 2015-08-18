@@ -24,8 +24,8 @@ require($CFG->dirroot.'/grade/lib.php');
 require($CFG->dirroot.'/grade/report/wsexport/lib.php');
 
 $courseid  = required_param('id', PARAM_INT);
-$grades    = required_param_array('grades', PARAM_RAW);// Grades that was hidden in form.
-$mentions  = optional_param_array('mentions', array(), PARAM_RAW); // mencao i
+$grades    = optional_param_array('grades', array(), PARAM_RAW);// Grades that was hidden in form.
+$mentions  = optional_param_array('mentions', array(), PARAM_RAW); // mencao i.
 $insufficientattendances = optional_param_array('insufficientattendances', array(), PARAM_RAW);
 $send_yes  = optional_param('send_yes', null, PARAM_RAW); // Do send grades.
 $send_no   = optional_param('send_no', null, PARAM_RAW); // Do NOT send grades  TODO: avaliar se null causa problemas.

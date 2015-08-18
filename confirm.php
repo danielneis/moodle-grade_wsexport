@@ -16,6 +16,8 @@
 
 /**
  * @package    gradereport_wsexport
+ * @copyright  2015 onwards Daniel Neis
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 require('../../../config.php');
@@ -23,11 +25,15 @@ require($CFG->libdir .'/gradelib.php');
 require($CFG->dirroot.'/grade/lib.php');
 
 $courseid                = required_param('id', PARAM_INT);// Course id.
-$grades                  = required_param_array('grades', PARAM_RAW);// Grades that was hidden in form.
-$mentions                = optional_param_array('mentions', array(), PARAM_RAW);// mencao i.
-$insufficientattendances = optional_param_array('insufficientattendances', array(), PARAM_RAW);// Frequencias insuficientes.
-$remotegrades            = optional_param('remotegrades', array(), PARAM_RAW);// Grades that was updated on remote, hidden in form.
+$grades                  = required_param_array('grades', PARAM_TEXT);// Grades that was hidden in form.
+$remotegrades            = optional_param_array('remotegrades', array(), PARAM_ALPHANUM);// Grades that was updated on remote, hidden in form.
 $overwrite_all           = optional_param('overwrite_all', 0, PARAM_INT);// Should overwrite grades updated directly on remote.
+
+/*
+TODO
+$mentions                = optional_param_array('mentions', array(), PARAM_ALPHANUM);// mencao i.
+$insufficientattendances = optional_param_array('insufficientattendances', array(), PARAM_ALPHANUM);// Frequencias insuficientes.
+*/
 
 if (!$course = $DB->get_record('course', array('id' => $courseid))) {
     print_error('invalidcourseid');
@@ -74,6 +80,7 @@ foreach ($grades as $matricula => $grade) {
     echo '<input type="hidden" name="grades['.$matricula.']" value="'.$grade.'"/>';
 }
 
+/*
 foreach ($mentions as $matricula => $mencao) {
     echo '<input type="hidden" name="mentions['.$matricula.']" value="1"/>';
 }
@@ -81,6 +88,7 @@ foreach ($mentions as $matricula => $mencao) {
 foreach ($insufficientattendances as $matricula => $fi) {
     echo '<input type="hidden" name="insufficientattendances['.$matricula.']" value="1"/>';
 }
+*/
 
 echo '<p>', $strnotice, '</p><p>',$strconfirm, '</p>',
      '<p class="yes_no" ><input type="submit" name="send_yes" value="'.$stryes.'" />',
