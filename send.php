@@ -25,13 +25,20 @@ require($CFG->dirroot.'/grade/report/wsexport/lib.php');
 
 $courseid  = required_param('id', PARAM_INT);
 $grades    = optional_param_array('grades', array(), PARAM_RAW);// Grades that was hidden in form.
-$mentions  = optional_param_array('mentions', array(), PARAM_RAW); // mencao i.
-$insufficientattendances = optional_param_array('insufficientattendances', array(), PARAM_RAW);
 $send_yes  = optional_param('send_yes', null, PARAM_RAW); // Do send grades.
 $send_no   = optional_param('send_no', null, PARAM_RAW); // Do NOT send grades  TODO: avaliar se null causa problemas.
 
 if (is_null($send_yes)) {
     redirect($CFG->wwwroot.'/grade/report/wsexport/index.php?id='.$courseid);
+}
+
+if ($CFG->grade_report_wsexport_grade_items_multiplegrades) {
+    $othergrades = array();
+    for ($i = 1; $i < 4; $i++) {
+        $itemparamcfg = 'grade_report_wsexport_grade_items_gradeitem'.$i.'_param';
+        $itemparam = $CFG->{$itemparamcfg};
+        $othergrades[$itemparam] = optional_param_array('othergrades_'.$itemparam, array(), PARAM_RAW);
+    }
 }
 
 if (!$course = $DB->get_record('course', array('id' => $courseid))) {
@@ -45,5 +52,5 @@ require_capability('gradereport/wsexport:send', $context);
 $gpr = new grade_plugin_return(array('type'=>'report', 'plugin'=>'grader', 'courseid'=>$courseid));
 $report = new grade_report_wsexport($courseid, $gpr, $context, 0, null, null);
 
-$report->send_grades($grades, $mentions, $insufficientattendances);
+$report->send_grades($grades, $othergrades);
 redirect($CFG->wwwroot.'/grade/report/wsexport/results.php?id='.$courseid);

@@ -38,22 +38,31 @@ require_login($courseid);
 $context = context_course::instance($courseid);
 require_capability('gradereport/wsexport:view', $context);
 
-$baseurl = new moodle_url('/grade/report/wsexport/index.php', array('id' => $courseid));
+$baseurl = new moodle_url('/grade/report/wsexport/item.php', array('id' => $courseid));
 
 $gpr = new grade_plugin_return(array('type' => 'report', 'plugin'=> 'grader', 'courseid' => $courseid));
 $report = new grade_report_wsexport($courseid, $gpr, $context, $force_course_grades, $group, null);
 
-$report->check_grade_items();
-
 $PAGE->set_url($baseurl);
 $PAGE->set_context($context);
 
-print_grade_page_head($COURSE->id, 'report', 'wsexport', '', false, false, true, 'wsexport', 'gradereport_wsexport');
-
 if ($report->is_meta_course()) {
+    print_grade_page_head($COURSE->id, 'report', 'wsexport', get_string('setgradeitems', 'gradereport_wsexport'),
+                          false, false, true, 'setgradeitems', 'gradereport_wsexport');
+
     $report->lista_turmas_afiliadas();
+    echo $OUTPUT->footer();
 } else {
-    grade_regrade_final_grades($courseid);// First make sure we have proper final grades.
-    $report->show();
+    // todo: autoload
+    require_once($CFG->dirroot.'/grade/report/wsexport/item_form.php');
+    $form = new grade_report_wsexport_item_form($baseurl, array('courseid' => $courseid));
+    if ($data = $form->get_data()) {
+        $report->save_course_grade_items($data);
+        redirect(new moodle_url('/grade/report/wsexport/index.php', array('id' => $courseid)));
+    } else {
+        print_grade_page_head($COURSE->id, 'report', 'wsexport', get_string('setgradeitems', 'gradereport_wsexport'),
+                              false, false, true, 'setgradeitems', 'gradereport_wsexport');
+        $form->display();
+        echo $OUTPUT->footer();
+    }
 }
-echo $OUTPUT->footer();

@@ -29,11 +29,14 @@ $grades                  = required_param_array('grades', PARAM_TEXT);// Grades 
 $remotegrades            = optional_param_array('remotegrades', array(), PARAM_ALPHANUM);// Grades that was updated on remote, hidden in form.
 $overwrite_all           = optional_param('overwrite_all', 0, PARAM_INT);// Should overwrite grades updated directly on remote.
 
-/*
-TODO
-$mentions                = optional_param_array('mentions', array(), PARAM_ALPHANUM);// mencao i.
-$insufficientattendances = optional_param_array('insufficientattendances', array(), PARAM_ALPHANUM);// Frequencias insuficientes.
-*/
+if ($CFG->grade_report_wsexport_grade_items_multiplegrades) {
+    $othergrades = array();
+    for ($i = 1; $i < 4; $i++) {
+        $itemparamcfg = 'grade_report_wsexport_grade_items_gradeitem'.$i.'_param';
+        $itemparam = $CFG->{$itemparamcfg};
+        $othergrades[$itemparam] = optional_param_array('othergrades_'.$itemparam, array(), PARAM_RAW);
+    }
+}
 
 if (!$course = $DB->get_record('course', array('id' => $courseid))) {
     print_error('invalidcourseid');
@@ -76,19 +79,15 @@ print_grade_page_head($COURSE->id, 'report', 'wsexport',
 
 echo '<form method="post" action="send.php?id='.$course->id.'">';
 
-foreach ($grades as $matricula => $grade) {
-    echo '<input type="hidden" name="grades['.$matricula.']" value="'.$grade.'"/>';
+foreach ($grades as $username=> $grade) {
+    echo '<input type="hidden" name="grades['.$username.']" value="'.$grade.'"/>';
 }
 
-/*
-foreach ($mentions as $matricula => $mencao) {
-    echo '<input type="hidden" name="mentions['.$matricula.']" value="1"/>';
+foreach ($othergrades as $itemparam => $grades) {
+    foreach ($grades as $username => $grade) {
+        echo '<input type="hidden" name="othergrades_'.$itemparam.'['.$username.']" value="'.$grade.'"/>';
+    }
 }
-
-foreach ($insufficientattendances as $matricula => $fi) {
-    echo '<input type="hidden" name="insufficientattendances['.$matricula.']" value="1"/>';
-}
-*/
 
 echo '<p>', $strnotice, '</p><p>',$strconfirm, '</p>',
      '<p class="yes_no" ><input type="submit" name="send_yes" value="'.$stryes.'" />',
