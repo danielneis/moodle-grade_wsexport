@@ -28,10 +28,10 @@ require_once($CFG->libdir.'/tablelib.php');
 
 class grade_report_wsexport extends grade_report {
 
-    private $moodle_students = array(); // Um array com os alunos vindos do moodle - inicializado em fill_table().
-    private $moodle_grades = array(); // Um array com as notas dos alunos do moodle - inicializado em get_moodle_grades().
-    private $grades_to_send = array(); // Um array com as notas dos alunos do moodle a serem enviadas para o controle acadêmico - inicializado em get_moodle_grades().
-    private $not_in_remote_students = array(); // Um array com os alunos do moodle que nao estao no remote - inicializado em fill_table_ok().
+    private $moodle_students = array(); // Um array com os alunos vindos do moodle
+    private $moodle_grades = array(); // Um array com as notas dos alunos do moodle
+    private $grades_to_send = array(); // Um array com as notas dos alunos do moodle a serem enviadas para o controle acadêmico
+    private $not_in_remote_students = array(); // Um array com os alunos do moodle que nao estao no remote
 
     // Um array com as contagens de alunos por problema.
     private $statistics = array('not_in_remote' => 0, 'not_in_moodle' => 0, 'ok' => 0,
@@ -39,12 +39,13 @@ class grade_report_wsexport extends grade_report {
 
     private $sendresults = array(); // Um array (matricula => msg) com as msgs de erro de envio de notas.
 
+    // TODO: refactor
     private $show_mencaoI = null;
 
-    private $cannot_submit = false; // If there is something preventing grades sending, set it to true.
+    private $cannot_submit = false; // If there is something preventing grades sending, set to true.
 
-    private $using_metacourse_grades = false; // If we retrieving grades from metacourse.
-    private $has_metacourse = false; // If courseid belongs to a metacourse.
+    private $using_metacourse_grades = false;
+    private $has_metacourse = false;
 
     private $data_format = "d/m/Y H:i"; // o formato da data mostrada na listagem
 
@@ -69,8 +70,6 @@ class grade_report_wsexport extends grade_report {
 
         $this->group = $group;
 
-        $coursecontext = context_course::instance($this->courseid);
-
         $this->get_course_grade_item($force_course_grades);
 
         // TODO: move out from constructor ?
@@ -81,14 +80,14 @@ class grade_report_wsexport extends grade_report {
         $this->get_moodle_grades();
         $this->get_remote_grades();
 
-        // TODO: paging bar url. real needed?
+        // TODO: paging bar url. really needed?
         $this->pbarurl = 'index.php?id='.$this->courseid;
 
         $this->setup_groups();
     }
 
     // TODO ?
-    public function process_data($data){
+    public function process_data($data) {
     }
 
     // TODO ?
@@ -173,13 +172,6 @@ class grade_report_wsexport extends grade_report {
         }
     }
 
-    private function fill_tables() {
-        //funções "fill_" devem ser chamadas nesta ordem
-        $this->rows_ok = $this->fill_table_ok();
-        $this->rows_not_in_moodle = $this->fill_table_not_in_moodle();
-        $this->rows_not_in_remote = $this->fill_table_not_in_remote();
-    }
-
     private function print_tables() {
         ob_start();
         $this->print_table_not_in_moodle();
@@ -191,35 +183,36 @@ class grade_report_wsexport extends grade_report {
     private function print_table_not_in_moodle() {
 
         if(!empty($this->rows_not_in_moodle) && ($this->statistics['not_in_moodle']  > 0)){
-            echo html_writer::tag('h2',
-                                  get_string('students_not_in_moodle', 'gradereport_wsexport', $this->statistics['not_in_moodle']).
-                                  get_string('wont_be_sent', 'gradereport_wsexport'), array('class' => 'table_title'));
+
+            echo html_writer::tag('h3', get_string('students_not_in_moodle', 'gradereport_wsexport',
+                                                   $this->statistics['not_in_moodle'])),
+                 html_writer::tag('h4', get_string('wont_be_sent', 'gradereport_wsexport'));
+
             foreach($this->rows_not_in_moodle as $row){
                 $this->table_not_in_moodle->add_data($row);
             }
-            $this->table_not_in_moodle->print_html();//apenas finaliza tabela
+            $this->table_not_in_moodle->print_html();
         }
     }
 
     private function print_table_not_in_remote() {
 
         if (!empty($this->rows_not_in_remote) && $this->statistics['not_in_remote'] > 0) {
-            echo html_writer::tag('h2',
-                                  get_string('students_not_in_remote', 'gradereport_wsexport', $this->statistics['not_in_remote']).
-                                  get_string('wont_be_sent', 'gradereport_wsexport'), array('class' => 'table_title'));
+
+            echo html_writer::tag('h3', get_string('students_not_in_remote', 'gradereport_wsexport',
+                                                   $this->statistics['not_in_remote'])),
+                 html_writer::tag('h4', get_string('wont_be_sent', 'gradereport_wsexport'));
 
             foreach($this->rows_not_in_remote as $row){
-                $this->table_not_in_remote->add_data(array_merge($row, array('', '', '')));//Moodle 2: já imprime
+                $this->table_not_in_remote->add_data($row); // Moodle 2: já imprime.
             }
-            $this->table_not_in_remote->print_html();//apenas finaliza tabela
+            $this->table_not_in_remote->print_html();
         }
     }
 
     private function print_table_ok() {
 
-        echo html_writer::tag('h2',
-                              get_string('students_ok', 'gradereport_wsexport', $this->statistics['ok']),
-                              array('class' => 'table_title'));
+        echo html_writer::tag('h3', get_string('students_ok', 'gradereport_wsexport', $this->statistics['ok']));
         foreach($this->rows_ok as $row){
             $this->table_ok->add_data($row);
         }
@@ -246,10 +239,12 @@ class grade_report_wsexport extends grade_report {
     private function get_moodle_grades() {
         global $DB, $CFG;
 
+        $coursecontext = context_course::instance($this->courseid);
+
         // TODO: use CFG->gradebookroles.
-        $studentid = $DB->get_field('role', 'id', array('shortname' => 'student'))
+        $studentid = $DB->get_field('role', 'id', array('shortname' => 'student'));
         $this->moodle_students = get_role_users($studentid, $coursecontext, false,
-                                                'u.id,u.firstname, u.lastname, u.username',
+                                                'u.id, '.get_all_user_name_fields(true). ', u.username',
                                                 'u.firstname, u.lastname', null, $this->group);
 
         $grades = $DB->get_records('grade_grades', array('itemid' => $this->course_grade_item->id),
@@ -282,21 +277,22 @@ class grade_report_wsexport extends grade_report {
                 if (isset($grades[$st->id]) && $grades[$st->id]->finalgrade != null) {
 
                     $this->moodle_grades[$st->id] = grade_format_gradevalue($grades[$st->id]->finalgrade,
-                                                                        $this->course_grade_item, true,
-                                                                        $this->course_grade_item->get_displaytype(), null);
+                                                                            $this->course_grade_item, true,
+                                                                            $this->course_grade_item->get_displaytype(), null);
 
                     $this->grades_to_send[$st->id] = grade_format_gradevalue($grades[$st->id]->finalgrade,
-                                                                        $this->course_grade_item, false,
-                                                                        $this->course_grade_item->get_displaytype(), //TODO: create config for this.
-                                                                        null);
+                                                                             $this->course_grade_item, false,
+                                                                             //TODO: create config for teacher to change this.
+                                                                             $this->course_grade_item->get_displaytype(), null);
+
                 } else {
-                    $this->moodle_grades[$st->id] = grade_format_gradevalue(null,
-                                                                        $this->course_grade_item, true,
-                                                                        $this->course_grade_item->get_displaytype(), null);
-                    $this->grades_to_send[$st->id] = grade_format_gradevalue(0,
-                                                                        $this->course_grade_item, false,
-                                                                        $this->course_grade_item->get_displaytype(), //TODO: create config for this.
-                                                                        null);
+
+                    $this->moodle_grades[$st->id] = grade_format_gradevalue(null, $this->course_grade_item, true,
+                                                                            $this->course_grade_item->get_displaytype(), null);
+
+                    $this->grades_to_send[$st->id] = grade_format_gradevalue(0, $this->course_grade_item, false,
+                                                                             //TODO: create config for teacher to change this.
+                                                                             $this->course_grade_item->get_displaytype(), null);
                 }
             }
         }
@@ -349,10 +345,10 @@ class grade_report_wsexport extends grade_report {
                         $grade_on_remote_hidden = '<input type="hidden" name="remotegrades['.$student->username.']" value="1"/>';
                     }
                 }
+
                 if (is_null($student->moodle_grade) || $student->moodle_grade == '-') {
-                    $alert .= html_writer::tag('p',
-                                               get_string('warning_null_grade', 'gradereport_wsexport',
-                                                          $this->grades_to_send[$student->id]),
+                    $alert .= html_writer::tag('p', get_string('warning_null_grade', 'gradereport_wsexport',
+                                                               $this->grades_to_send[$student->id]),
                                                array('class' => 'null_grade'));
                 }
 
@@ -411,25 +407,15 @@ class grade_report_wsexport extends grade_report {
 
                 list($has_mencao_i, $grade_in_remote) = $this->get_grade_and_mencao_i($student);
 
-                $row = array($student[$CFG->gradereport_wsexport_get_grades_return_fullname], ''); // Moodle grade doesn't exist.
-
-                /*
-                 TODO
-                if ($this->show_mencaoI) {
-                    $row[] = $this->get_checkbox("mentions[]", $has_mencao_i, $this->cannot_submit);
-                }
-                */
-
                 if (empty($student[$CFG->gradereport_wsexport_get_grades_return_grade]) ||
                     empty($student[$CFG->gradereport_wsexport_get_grades_return_timeupdated])) {
-                    $sent_date = get_string('never_sent', 'gradereport_wsexport');
+                    $timeupdated = get_string('never_sent', 'gradereport_wsexport');
                 } else {
-                    $sent_date = date($this->data_format,
+                    $timeupdated = date($this->data_format,
                                       strtotime($student[$CFG->gradereport_wsexport_get_grades_return_timeupdated]));
                 }
 
-                $row = array_merge($row, array($grade_in_remote, $sent_date, ''));
-                $rows[] = $row;
+                $rows[] = array($student[$CFG->gradereport_wsexport_get_grades_return_fullname], $grade_in_remote, $timeupdated);
             }
         }
         return $rows;
@@ -441,37 +427,34 @@ class grade_report_wsexport extends grade_report {
         $this->statistics['not_in_remote'] = sizeof($this->not_in_remote_students);
 
         foreach ($this->not_in_remote_students as $student) {
-
-            $row = array(fullname($student), $this->moodle_grades[$student->id]);
-
-            /*
-            TODO
-            if ($this->show_mencaoI) {
-                $row[] = $this->get_checkbox("mentions[]", '', true);
-            }
-            */
-
-            $rows[] = $row;
+            $rows[] = array(fullname($student), $this->moodle_grades[$student->id]);
         }
         return $rows;
     }
 
     private function setup_and_fill_tables() {
-        // The order here does not matter, only when filling.
+        // The order here does not matter.
         $this->setup_table_ok();
         $this->setup_table_not_in_remote();
         $this->setup_table_not_in_moodle();
 
-        $this->fill_tables();
+        // The order here matters.
+        $this->rows_ok = $this->fill_table_ok();
+        $this->rows_not_in_moodle = $this->fill_table_not_in_moodle();
+        $this->rows_not_in_remote = $this->fill_table_not_in_remote();
     }
 
     private function setup_table_not_in_remote() {
 
-        $columns = $this->get_table_columns();
+        $columns = array('name', 'moodle_grade');
+        $headers = array();
+        foreach ($columns as $c) {
+            $headers[] = get_string($c, 'gradereport_wsexport');
+        }
 
         $this->table_not_in_remote = new flexible_table('gradereport-wsexport-not_in_remote');
         $this->table_not_in_remote->define_columns($columns);
-        $this->table_not_in_remote->define_headers($this->get_table_headers());
+        $this->table_not_in_remote->define_headers($headers);
         $this->table_not_in_remote->define_baseurl($this->baseurl);
 
         $this->table_not_in_remote->set_attribute('cellspacing', '0');
@@ -487,11 +470,15 @@ class grade_report_wsexport extends grade_report {
 
     private function setup_table_not_in_moodle() {
 
-        $columns = $this->get_table_columns();
+        $columns = array('name', 'remote_grade', 'timeupdated', 'alerts');
+        $headers = array();
+        foreach ($columns as $c) {
+            $headers[] = get_string($c, 'gradereport_wsexport');
+        }
 
         $this->table_not_in_moodle = new flexible_table('gradereport-wsexport-not_in_moodle');
         $this->table_not_in_moodle->define_columns($columns);
-        $this->table_not_in_moodle->define_headers($this->get_table_headers());
+        $this->table_not_in_moodle->define_headers($headers);
         $this->table_not_in_moodle->define_baseurl($this->baseurl);
 
         $this->table_not_in_moodle->set_attribute('cellspacing', '0');
@@ -507,11 +494,15 @@ class grade_report_wsexport extends grade_report {
 
     private function setup_table_ok() {
 
-        $columns = $this->get_table_columns();
+        $columns = array('name', 'moodle_grade', 'remote_grade', 'timeupdated', 'alerts');
+        $headers = array();
+        foreach ($columns as $c) {
+            $headers[] = get_string($c, 'gradereport_wsexport');
+        }
 
         $this->table_ok = new flexible_table('gradereport-wsexport-ok');
         $this->table_ok->define_columns($columns);
-        $this->table_ok->define_headers($this->get_table_headers());
+        $this->table_ok->define_headers($headers);
         $this->table_ok->define_baseurl($this->baseurl);
 
         $this->table_ok->set_attribute('cellspacing', '0');
@@ -523,34 +514,6 @@ class grade_report_wsexport extends grade_report {
         }
 
         $this->table_ok->setup();
-    }
-
-    private function get_table_headers() {
-
-        $h = array(get_string('name'), get_string('moodle_grade', 'gradereport_wsexport'));
-
-        /*
-        TODO
-        if ($this->show_mencaoI) {
-            $h[] = get_string('mention', 'gradereport_wsexport');
-        }
-        */
-
-        return array_merge($h, array(get_string('remote_grade', 'gradereport_wsexport'),
-                                     get_string('sent_date', 'gradereport_wsexport'),
-                                     get_string('alerts', 'gradereport_wsexport')));
-    }
-
-    private function get_table_columns() {
-        $c = array('name', 'grade');
-        /*
-        TODO
-        if ($this->show_mencaoI) {
-            $c[] = 'mention';
-        }
-        */
-        // Done this way because the order of columns.
-        return array_merge($c, array('remote_grade', 'sent_date', 'alerts'));
     }
 
     private function select_overwrite_grades() {
@@ -681,7 +644,7 @@ class grade_report_wsexport extends grade_report {
         }
     }
 
-    public function is_meta_course($courseid) {
+    public function is_meta_course() {
         global $DB;
         $sql = "SELECT DISTINCT cm.id
                  FROM {course} cm
@@ -689,7 +652,7 @@ class grade_report_wsexport extends grade_report {
                    ON (e.courseid = cm.id AND
                        e.enrol = 'meta')
                 WHERE cm.id = ?";
-        return $DB->record_exists_sql($sql, array($courseid));
+        return $DB->record_exists_sql($sql, array($this->courseid));
     }
 
     private function get_checkbox($name, $checked, $disabled) {
@@ -698,7 +661,7 @@ class grade_report_wsexport extends grade_report {
         return '<input type="checkbox" name="'.$name.'" '.$check.' value="1" '.$dis.'/>';
     }
 
-    public function lista_turmas_afiliadas($courseid) {
+    public function lista_turmas_afiliadas() {
         global $OUTPUT, $CFG, $DB;
 
         echo $OUTPUT->box_start('generalbox');
@@ -712,8 +675,8 @@ class grade_report_wsexport extends grade_report {
                            JOIN {course} filha
                              ON (e.customint1 = filha.id)
                           WHERE e.enrol = 'meta'
-                            AND c.id = {$courseid}";
-        $turmas = $DB->get_records_sql($sql);
+                            AND c.id = ?";
+        $turmas = $DB->get_records_sql($sql, array($this->courseid));
 
         $turmas_professor = array();
         $turmas_outros = array();

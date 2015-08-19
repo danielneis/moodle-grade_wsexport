@@ -107,6 +107,21 @@ if ($ADMIN->fulltree) {
                     get_string('get_grades_return_grade_nome', 'gradereport_wsexport'),
                     get_string('get_grades_return_grade_msg', 'gradereport_wsexport'), ''));
 
+    $settings->add(new admin_setting_configtext('grade_report_wsexport_get_grades_return_fullname',
+                    get_string('get_grades_return_fullname_nome', 'gradereport_wsexport'),
+                    get_string('get_grades_return_fullname_msg', 'gradereport_wsexport'), ''));
+
+    $settings->add(new admin_setting_configtext('grade_report_wsexport_get_grades_return_timeupdated',
+                    get_string('get_grades_return_timeupdated_nome', 'gradereport_wsexport'),
+                    get_string('get_grades_return_timeupdated_msg', 'gradereport_wsexport'), ''));
+
+    $settings->add(new admin_setting_configtext('grade_report_wsexport_get_grades_return_updatedbymoodle',
+                    get_string('get_grades_return_updatedbymoodle_nome', 'gradereport_wsexport'),
+                    get_string('get_grades_return_updatedbymoodle_msg', 'gradereport_wsexport'), ''));
+
+    $settings->add(new admin_setting_configtext('grade_report_wsexport_get_grades_return_attendance',
+                    get_string('get_grades_return_attendance_nome', 'gradereport_wsexport'),
+                    get_string('get_grades_return_attendance_msg', 'gradereport_wsexport'), ''));
 
     // Send grades.
     $settings->add(new admin_setting_heading('grade_report_wsexport_send_grades',

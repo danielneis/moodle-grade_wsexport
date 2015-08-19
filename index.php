@@ -42,17 +42,14 @@ $baseurl = new moodle_url('/grade/report/wsexport/index.php', array('id'=>$cours
 
 $PAGE->set_url($baseurl);
 $PAGE->set_context($context);
-$PAGE->set_pagelayout('report');
 
-print_grade_page_head($COURSE->id, 'report', 'wsexport',
-                      get_string('pluginname', 'gradereport_wsexport'), false, false, true,
-                      'wsexport', 'gradereport_wsexport');
+print_grade_page_head($COURSE->id, 'report', 'wsexport', '', false, false, true, 'wsexport', 'gradereport_wsexport');
 
-$gpr = new grade_plugin_return(array('type' => 'report', 'plugin'=> 'grader', 'courseid' => $courseid));// Return tracking object.
-$report = new grade_report_wsexport($courseid, $gpr, $context, $force_course_grades, $group, null);// Initialise the grader report object.
+$gpr = new grade_plugin_return(array('type' => 'report', 'plugin'=> 'grader', 'courseid' => $courseid));
+$report = new grade_report_wsexport($courseid, $gpr, $context, $force_course_grades, $group, null);
 
-if ($report->is_meta_course($courseid)) {
-    $report->lista_turmas_afiliadas($courseid);
+if ($report->is_meta_course()) {
+    $report->lista_turmas_afiliadas();
 } else {
     grade_regrade_final_grades($courseid);// First make sure we have proper final grades.
     $report->show();
