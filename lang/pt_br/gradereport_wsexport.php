@@ -125,6 +125,19 @@ $string['get_grades_username_param_msg'] = 'Name of the paramenter of get grades
 $string['get_grades_course_param_nome'] = 'Get grades course parameter';
 $string['get_grades_course_param_msg'] = 'Name of the paramenter of get grades function that identifies the course to get grades from.';
 
+$string['get_grades_return_heading'] = 'Get grades return';
+$string['get_grades_return_info'] = 'Here you can configure the structure of returned values. This function must return an array like array("username1" => "grades_structure")), where "grades_structure is an associative array with field defined below."';
+$string['get_grades_return_grade_nome'] = 'Grade attribute name';
+$string['get_grades_return_grade_msg'] = 'Name of the attribute that holds the grades.';
+$string['get_grades_return_fullname_nome'] = 'Fullname attribute name';
+$string['get_grades_return_fullname_msg'] = 'Name of the attribute that holds the full name of student. Displayed when user are registered in remote but not on Moodle.';
+$string['get_grades_return_timeupdated_nome'] = 'Time updated attribute name';
+$string['get_grades_return_timeupdated_msg'] = 'Name of the attribute that holds the last time the grade was updated on remote. Must be null if never updated.';
+$string['get_grades_return_updatedbymoodle_nome'] = 'Updated by moodle attribute name';
+$string['get_grades_return_updatedbymoodle_msg'] = 'Name of the attribute that holds true if last update on grades were made by Moodle and otherwise holds false.';
+$string['get_grades_return_attendance_nome'] = 'Attendance attribute name';
+$string['get_grades_return_attendance_msg'] = 'Name of the optional attribute that holds the attendance status of the student.';
+
 $string['sent_date'] = 'Data de envio';
 $string['some_grades_not_sent'] = 'As notas abaixo não foram transpostas.';
 $string['students'] = '{$a} aluno(s)';
@@ -142,7 +155,7 @@ $string['using_metacourse_grades'] = 'As notas apresentadas foram trazidas do ag
 $string['warning_diff_grade'] = 'As notas/conceitos no Moodle e no controle acadêmico diferem';
 $string['warning_null_grade'] = 'Sem nota/conceito. Será transposto:&nbsp;\'{$a}\'';
 $string['will_overwrite_grades'] = 'Você optou por substituir as notas de todos os alunos transpostas anteriormente.';
-$string['wont_be_sent'] = ' <span class=\'wont_be_sent\'>Atenção: Essas notas não serão transpostas</span>';
+$string['wont_be_sent'] = ' <span class="wont_be_sent">Atenção: Essas notas não serão transpostas</span>';
 $string['wont_overwrite_grades'] = 'Você optou por substituir as notas apenas dos alunos que não tiveram sua nota alterada diretamente no controle acadêmico.';
 $string['wsexport:send'] = 'Transpor notas para o controle acadêmico';
 $string['wsexport:view'] = 'Visualizar notas a serem transpostas';

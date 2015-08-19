@@ -25,10 +25,6 @@ defined('MOODLE_INTERNAL') || die;
 if ($ADMIN->fulltree) {
 
     /*
-    $settings->add(new admin_setting_configtext('grade_report_wsexport_send_grades_attendance_param',
-                    get_string('send_grades_attendance_param_nome', 'gradereport_wsexport'),
-                    get_string('send_grades_attendance_param_msg', 'gradereport_wsexport'), ''));
-
     $settings->add(new admin_setting_configtext('grade_report_wsexport_send_grades_mention_param',
                     get_string('send_grades_mention_param_nome', 'gradereport_wsexport'),
                     get_string('send_grades_mention_param_msg', 'gradereport_wsexport'), ''));
@@ -81,7 +77,7 @@ if ($ADMIN->fulltree) {
                     get_string('are_grades_valid_grades_param_msg', 'gradereport_wsexport'), ''));
 
 
-    // Get grades.
+    // Get grades call.
     $settings->add(new admin_setting_heading('grade_report_wsexport_get_grades',
                     get_string('get_grades_heading', 'gradereport_wsexport'),
                     get_string('get_grades_info', 'gradereport_wsexport'), ''));
@@ -101,6 +97,16 @@ if ($ADMIN->fulltree) {
     $settings->add(new admin_setting_configtext('grade_report_wsexport_get_grades_course_param',
                     get_string('get_grades_course_param_nome', 'gradereport_wsexport'),
                     get_string('get_grades_course_param_msg', 'gradereport_wsexport'), ''));
+
+    // Get grades return.
+    $settings->add(new admin_setting_heading('grade_report_wsexport_get_grades_return',
+                    get_string('get_grades_return_heading', 'gradereport_wsexport'),
+                    get_string('get_grades_return_info', 'gradereport_wsexport'), ''));
+
+    $settings->add(new admin_setting_configtext('grade_report_wsexport_get_grades_return_grade',
+                    get_string('get_grades_return_grade_nome', 'gradereport_wsexport'),
+                    get_string('get_grades_return_grade_msg', 'gradereport_wsexport'), ''));
+
 
     // Send grades.
     $settings->add(new admin_setting_heading('grade_report_wsexport_send_grades',
